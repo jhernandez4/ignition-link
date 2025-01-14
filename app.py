@@ -6,9 +6,9 @@ import os
 
 from database import User, create_db_and_tables, SessionDep
 
-load_dotenv
+load_dotenv()
 
-FIREBASE_KEY_PATH = os.environ.get("FIREBASE_KEY_PATH")
+FIREBASE_KEY_PATH = os.getenv("FIREBASE_KEY_PATH")
 cred = credentials.Certificate(FIREBASE_KEY_PATH)
 firebase_admin.initialize_app(cred)
 

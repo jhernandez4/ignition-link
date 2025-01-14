@@ -3,13 +3,15 @@ from fastapi import Depends
 from sqlmodel import Field, Session, SQLModel, create_engine
 import os
 from dotenv import load_dotenv
+from pydantic import EmailStr
 
 load_dotenv()
 
 class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    firebase_uid: str = Field(index=True, unique=True)
     username: str = Field(index=True, unique=True)
-    email: str = Field(index=True, unique=True)
+    email: EmailStr = Field(index=True, unique=True)
 
 MYSQL_URI = os.getenv("MYSQL_URI")
 connect_args = {"check_same_thread": False}

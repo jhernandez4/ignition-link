@@ -14,8 +14,7 @@ class User(SQLModel, table=True):
     email: EmailStr = Field(index=True, unique=True)
 
 MYSQL_URI = os.getenv("MYSQL_URI")
-connect_args = {"check_same_thread": False}
-engine = create_engine(MYSQL_URI, connect_args=connect_args)
+engine = create_engine(MYSQL_URI)
 
 # Create the models for all models defined above
 def create_db_and_tables():

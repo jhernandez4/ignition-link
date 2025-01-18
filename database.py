@@ -4,7 +4,7 @@ from sqlmodel import Field, Session, SQLModel, create_engine
 import os
 from dotenv import load_dotenv
 from pydantic import EmailStr
-from datetime import datetime
+from datetime import datetime, timezone 
 
 load_dotenv()
 
@@ -13,7 +13,7 @@ class User(SQLModel, table=True):
     firebase_uid: str = Field(index=True, unique=True)
     username: str = Field(index=True, unique=True)
     email: EmailStr = Field(index=True, unique=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 MYSQL_URI = os.getenv("MYSQL_URI")
 engine = create_engine(MYSQL_URI)

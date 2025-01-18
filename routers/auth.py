@@ -3,7 +3,6 @@ import firebase_admin
 from firebase_admin import credentials, auth
 from dotenv import load_dotenv
 import os
-from database import User, create_db_and_tables, SessionDep
 
 router = APIRouter()
 

@@ -13,7 +13,7 @@ class User(SQLModel, table=True):
     firebase_uid: str = Field(index=True, unique=True)
     username: str = Field(index=True, unique=True)
     email: EmailStr = Field(index=True, unique=True)
-    created_at: datetime = Field(default_factory=datetime.now(datetime.timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.utcnow)
 
 MYSQL_URI = os.getenv("MYSQL_URI")
 engine = create_engine(MYSQL_URI)

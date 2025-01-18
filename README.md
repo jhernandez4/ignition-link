@@ -31,5 +31,5 @@ pip install -r requirements.txt
 ### 4. Run the App
 
 ```bash
-fastapi dev app.py
+fastapi dev main.py
 ```

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from database import User, create_db_and_tables, SessionDep
+from .database import User, create_db_and_tables, SessionDep
 from .routers import auth
 
 app = FastAPI()

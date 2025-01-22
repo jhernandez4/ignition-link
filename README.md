@@ -49,7 +49,7 @@ USE ignition_link;
 ```
 
 - Replace the database URI in the .env to match the credentials and database name you set.
-- Make sure the database status is ***Running*** under Management > Server Status
+- Make sure the database status is **Running** under Management > Server Status
 ### 5. Move the .env file and Firebase .json credentials files into the directory root
 These will not be checked into GitHub but they'll be available in the discord server.
 

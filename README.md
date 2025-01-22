@@ -40,7 +40,7 @@ https://dev.mysql.com/downloads/mysql/
 
 - Install and set it up.
 - Use the root user to create an "admin" user with all privileges
-- Set the admin password 123 or something you can remember
+- Set the admin password to 123 or something you can remember
 - Use the commands:
 
 ```sql

@@ -9,17 +9,23 @@ cd ignition-link
 
 ### 2. Set Up the Virtual Environment
 
-Activate the virtual environment to isolate the project dependencies.
+Create and activate the virtual environment to isolate the project dependencies. 
+
+Once you have the the virtual environment created, you only have to **activate** it
+from here on out when you open the project directory.
+
 
 #### Using macOS/Linux:
 
 ```bash
+python3 -m venv virtualEnv
 source virtualEnv/bin/activate
 ```
 
 #### Using Windows:
 
 ```bash
+py -3 -m venv virtualEnv
 virtualEnv\Scripts\activate
 ```
 
@@ -28,7 +34,30 @@ virtualEnv\Scripts\activate
 ```bash
 pip install -r requirements.txt
 ```
-### 4. Run the App
+### 4. Download MySQL 
+
+https://dev.mysql.com/downloads/mysql/
+
+- Install and set it up.
+- Use the root user to create an "admin" user with all privileges
+- Set the admin password to 123 or something you can remember
+- Use the commands:
+
+```sql
+CREATE DATABASE ignition_link;
+USE ignition_link;
+```
+
+- Replace the database URI in the .env to match the credentials and database name you set.
+- Make sure the database status is **Running** under Management > Server Status
+
+### 5. Move the following files into your directory
+- ignition-link-firebase-adminsdk.json
+- .env 
+
+These will **not** be checked into GitHub but they'll be posted in the discord server.
+
+### 6. Run the App
 
 ```bash
 fastapi dev main.py

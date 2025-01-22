@@ -50,8 +50,12 @@ USE ignition_link;
 
 - Replace the database URI in the .env to match the credentials and database name you set.
 - Make sure the database status is **Running** under Management > Server Status
-### 5. Move the .env file and Firebase .json credentials files into the directory root
-These will not be checked into GitHub but they'll be available in the discord server.
+
+### 5. Move the following files into your directory
+- ignition-link-firebase-adminsdk.json
+- .env 
+
+These will **not** be checked into GitHub but they'll be posted in the discord server.
 
 ### 6. Run the App
 

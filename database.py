@@ -15,8 +15,8 @@ class User(SQLModel, table=True):
     email: EmailStr = Field(index=True, unique=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-MYSQL_URI = os.getenv("MYSQL_URI")
-engine = create_engine(MYSQL_URI)
+PSQL_URI = os.getenv("PSQL_URI")
+engine = create_engine(PSQL_URI)
 
 # Create the models for all models defined above
 def create_db_and_tables():

@@ -34,22 +34,21 @@ virtualEnv\Scripts\activate
 ```bash
 pip install -r requirements.txt
 ```
-### 4. Download MySQL 
+### 4. Download Postgresql 
 
-https://dev.mysql.com/downloads/mysql/
+https://www.postgresql.org/download/
 
 - Install and set it up.
-- Use the root user to create an "admin" user with all privileges
-- Set the admin password to 123 or something you can remember
-- Use the commands:
+- Use the default postgresql user or create an "admin" user with all privileges
+- Set the password to 123 or something you can remember
+- Use the commands in the psql Shell:
 
 ```sql
 CREATE DATABASE ignition_link;
-USE ignition_link;
+/connect ignition_link;
 ```
 
 - Replace the database URI in the .env to match the credentials and database name you set.
-- Make sure the database status is **Running** under Management > Server Status
 
 ### 5. Move the following files into your directory
 - ignition-link-firebase-adminsdk.json

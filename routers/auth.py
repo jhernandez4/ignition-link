@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordBearer
 from firebase_admin import auth
 from typing import Annotated
 from ..database import SessionDep, User
@@ -8,25 +9,31 @@ from pydantic import EmailStr
 
 router = APIRouter()
 
+# OAuth2PasswordBearer will fetch the token from the "Authorization" header
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-async def verify_token(request: Request):
+async def verify_firebase_token(token: str = Depends(oauth2_scheme)):
     try:
-        # Extract Firebase ID token from the Authorization header
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Missing or invalid token")
-        
-        id_token = auth_header.split(" ")[1]
-
-        # Verify the token using Firebase Admin SDK
-        decoded_token = auth.verify_id_token(id_token)
+        # Decode and verify the token using Firebase Admin SDK
+        decoded_token = auth.verify_id_token(token)
         user_id = decoded_token.get("uid")
+        
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token is invalid or expired",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
-        return {"status": "success", "user_id": user_id}
+        return decoded_token 
+
     except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Token verification failed: {str(e)}",
+        )
 
-TokenDep = Annotated[dict, Depends(verify_token)]
+TokenDep = Annotated[dict, Depends(verify_firebase_token)]
 
 class UserCreate(SQLModel):
     firebase_uid: str 

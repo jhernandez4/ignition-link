@@ -1,9 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
-import firebase_admin
-from firebase_admin import credentials, auth
-from dotenv import load_dotenv
-import os
+from firebase_admin import auth
 from typing import Annotated
 from ..database import SessionDep, User
 from sqlmodel import SQLModel, select
@@ -11,11 +8,6 @@ from pydantic import EmailStr
 
 router = APIRouter()
 
-load_dotenv()
-
-FIREBASE_KEY_PATH = os.getenv("FIREBASE_KEY_PATH")
-cred = credentials.Certificate(FIREBASE_KEY_PATH)
-firebase_admin.initialize_app(cred)
 
 async def verify_token(request: Request):
     try:

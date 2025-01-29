@@ -16,7 +16,7 @@ async def verify_firebase_token(token: str = Depends(oauth2_scheme)):
     try:
         # Decode and verify the token using Firebase Admin SDK
         decoded_token = auth.verify_id_token(token)
-        user_id = decoded_token.get("uid")
+        user_id = decoded_token['uid']
         
         if not user_id:
             raise HTTPException(
@@ -36,7 +36,6 @@ async def verify_firebase_token(token: str = Depends(oauth2_scheme)):
 TokenDep = Annotated[dict, Depends(verify_firebase_token)]
 
 class UserCreate(SQLModel):
-    firebase_uid: str 
     username: str 
     email: EmailStr 
 
@@ -48,7 +47,7 @@ def register_user(
 ):
     # Check if user with the same firebase_uid already exists
     existing_user = session.exec(
-        select(User).where(User.firebase_uid == user_request.firebase_uid)
+        select(User).where(User.firebase_uid == token['uid'])
     ).first()
 
     if existing_user:
@@ -64,7 +63,7 @@ def register_user(
 
     # Create new user
     new_user = User(
-        firebase_uid=user_request.firebase_uid,
+        firebase_uid=token['uid'],
         username=user_request.username,
         email=user_request.email,
     )

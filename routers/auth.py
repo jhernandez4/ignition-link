@@ -46,13 +46,21 @@ def register_user(
     session: SessionDep,
     user_request: UserCreate
 ):
-    # Check if user already exists
+    # Check if user with the same firebase_uid already exists
     existing_user = session.exec(
         select(User).where(User.firebase_uid == user_request.firebase_uid)
     ).first()
 
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists.")
+
+    # Check if the username is already taken
+    username_taken = session.exec(
+        select(User).where(User.username == user_request.username)
+    ).first()
+
+    if username_taken:
+        raise HTTPException(status_code=400, detail="Username is already taken.")
 
     # Create new user
     new_user = User(

@@ -33,6 +33,16 @@ async def verify_firebase_token(token: str = Depends(oauth2_scheme)):
             detail=f"Token verification failed: {str(e)}",
         )
 
+def load_admin_emails():
+    try:
+        with open('admin_emails.txt', 'r') as file:
+            emails = file.read().splitlines()  # Read each line into a list
+            return emails
+    except FileNotFoundError:
+        return []  
+    except Exception as e:
+        return []  
+
 TokenDep = Annotated[dict, Depends(verify_firebase_token)]
 
 class UserCreate(SQLModel):
@@ -61,11 +71,16 @@ def register_user(
     if username_taken:
         raise HTTPException(status_code=400, detail="Username is already taken.")
 
+    # Set admin role 
+    admin_emails = load_admin_emails()
+    is_admin = user_request.email in admin_emails
+
     # Create new user
     new_user = User(
         firebase_uid=token['uid'],
         username=user_request.username,
         email=user_request.email,
+        is_admin=is_admin
     )
 
     try:

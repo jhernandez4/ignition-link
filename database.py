@@ -14,6 +14,7 @@ class User(SQLModel, table=True):
     username: str = Field(index=True, unique=True)
     email: EmailStr = Field(index=True, unique=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_admin: bool = Field(default=False)
 
 PSQL_URI = os.getenv("PSQL_URI")
 engine = create_engine(PSQL_URI)

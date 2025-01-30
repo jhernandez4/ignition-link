@@ -45,16 +45,13 @@ def load_admin_emails():
 
 TokenDep = Annotated[dict, Depends(verify_firebase_token)]
 
-class UserCreate(SQLModel):
-    username: str 
-    email: EmailStr 
-
 @router.post("/signup")
 def register_user(
     token: TokenDep, 
     session: SessionDep,
-    user_request: UserCreate
 ):
+    firebase_user = auth.get_user(uid=token['uid'])
+
     # Check if user with the same firebase_uid already exists
     existing_user = session.exec(
         select(User).where(User.firebase_uid == token['uid'])
@@ -65,7 +62,7 @@ def register_user(
 
     # Check if the username is already taken
     username_taken = session.exec(
-        select(User).where(User.username == user_request.username)
+        select(User).where(User.username == firebase_user.display_name)
     ).first()
 
     if username_taken:
@@ -73,13 +70,14 @@ def register_user(
 
     # Set admin role 
     admin_emails = load_admin_emails()
-    is_admin = user_request.email in admin_emails
+    is_admin = firebase_user.email in admin_emails
+
 
     # Create new user
     new_user = User(
         firebase_uid=token['uid'],
-        username=user_request.username,
-        email=user_request.email,
+        username=firebase_user.display_name,
+        email=firebase_user.email,
         is_admin=is_admin
     )
 

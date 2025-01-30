@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Cookie
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
-from firebase_admin import auth
+from firebase_admin import auth, exceptions
 from typing import Annotated
 from ..database import SessionDep, User
 from sqlmodel import SQLModel, select
 from pydantic import EmailStr
+import datetime
 
 router = APIRouter()
 
@@ -33,6 +34,35 @@ async def verify_firebase_token(token: str = Depends(oauth2_scheme)):
             detail=f"Token verification failed: {str(e)}",
         )
 
+# Dependency for verifying the session cookie
+async def verify_firebase_session_cookie(session_cookie: str = Cookie(None)):
+    if not session_cookie:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session cookie is missing or invalid",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    try:
+        # Decode and verify the session cookie using Firebase Admin SDK
+        decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
+        user_id = decoded_claims['uid']
+
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session cookie is invalid or expired",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        return decoded_claims
+
+    except exceptions.FirebaseError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Session cookie verification failed: {str(e)}",
+        )
+
 def load_admin_emails():
     try:
         with open('admin_emails.txt', 'r') as file:
@@ -44,6 +74,7 @@ def load_admin_emails():
         return []  
 
 TokenDep = Annotated[dict, Depends(verify_firebase_token)]
+CookieDep = Annotated[dict, Depends(verify_firebase_session_cookie)]
 
 @router.post("/signup")
 def register_user(
@@ -97,3 +128,48 @@ def register_user(
             "email": new_user.email
         }
     )
+
+@router.post("/session-login")
+def session_login(
+    id_token: TokenDep,
+):
+    # Set session expiration to 5 days.
+    expires_in = datetime.timedelta(days=5)
+
+    try:
+        # Create the session cookie. This will also verify the ID token in the process.
+        # The session cookie will have the same claims as the ID token.
+        session_cookie = auth.create_session_cookie(id_token, expires_in=expires_in)
+        response = JSONResponse({'status': 'success'})
+
+        # Set cookie policy for session cookie.
+        expires = datetime.datetime.now() + expires_in
+
+        # Set the session cookie in the response
+        response.set_cookie(
+            'session', session_cookie, expires=expires, httponly=True, secure=True
+        )
+
+        return response
+    except exceptions.FirebaseError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Failed to create a session cookie")
+
+@router.post("/logout")
+def session_logout(
+    decoded_claims: CookieDep
+):
+    try:
+        auth.revoke_refresh_tokens(decoded_claims['sub'])
+        response = JSONResponse({"status": "success"})
+        # Clear the session cookie by setting expires to 0 (cookie will be deleted)
+        response.set_cookie('session', '', expires=0, httponly=True, secure=True)
+
+        return response
+    
+    except auth.InvalidSessionCookieError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Session cookie is invalid or expired. Please log in again."
+        )

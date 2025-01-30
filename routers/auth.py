@@ -47,14 +47,14 @@ TokenDep = Annotated[dict, Depends(verify_firebase_token)]
 
 @router.post("/signup")
 def register_user(
-    token: TokenDep, 
+    id_token: TokenDep, 
     session: SessionDep,
 ):
-    firebase_user = auth.get_user(uid=token['uid'])
+    firebase_user = auth.get_user(uid=id_token['uid'])
 
     # Check if user with the same firebase_uid already exists
     existing_user = session.exec(
-        select(User).where(User.firebase_uid == token['uid'])
+        select(User).where(User.firebase_uid == id_token['uid'])
     ).first()
 
     if existing_user:
@@ -75,7 +75,7 @@ def register_user(
 
     # Create new user
     new_user = User(
-        firebase_uid=token['uid'],
+        firebase_uid=id_token['uid'],
         username=firebase_user.display_name,
         email=firebase_user.email,
         is_admin=is_admin

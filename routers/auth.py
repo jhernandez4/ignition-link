@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends, status, Cookie
+from fastapi import ( 
+    APIRouter, HTTPException, Depends, status, Cookie, Form
+)
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 from firebase_admin import auth, exceptions
@@ -7,6 +9,7 @@ from ..database import SessionDep, User
 from sqlmodel import SQLModel, select
 from pydantic import EmailStr
 import datetime
+from validation import check_username_exists
 
 router = APIRouter()
 
@@ -78,6 +81,7 @@ CookieDep = Annotated[dict, Depends(verify_firebase_session_cookie)]
 
 @router.post("/signup")
 def register_user(
+    username: Annotated[str, Form()],
     id_token: TokenDep, 
     session: SessionDep,
 ):
@@ -92,9 +96,7 @@ def register_user(
         raise HTTPException(status_code=400, detail="User already exists.")
 
     # Check if the username is already taken
-    username_taken = session.exec(
-        select(User).where(User.username == firebase_user.display_name)
-    ).first()
+    username_taken = check_username_exists(username, session)
 
     if username_taken:
         raise HTTPException(status_code=400, detail="Username is already taken.")
@@ -107,7 +109,7 @@ def register_user(
     # Create new user
     new_user = User(
         firebase_uid=id_token['uid'],
-        username=firebase_user.display_name,
+        username=username,
         email=firebase_user.email,
         is_admin=is_admin
     )

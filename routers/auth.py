@@ -9,7 +9,7 @@ from ..database import SessionDep, User
 from sqlmodel import SQLModel, select
 from pydantic import EmailStr
 import datetime
-from validation import check_username_exists
+from .validation import check_username_exists
 
 router = APIRouter()
 

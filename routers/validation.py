@@ -2,16 +2,21 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 from ..database import SessionDep, User
 from sqlmodel import select
+from pydantic import BaseModel
+
 router = APIRouter(
     tags=["validation"]
 )
 
+class UsernameCheckRequest(BaseModel):
+    username: str
+
 @router.post("/check-username")
 def check_username(
-    username: str,
+    request: UsernameCheckRequest,
     session: SessionDep
 ):
-    if check_username_exists(username, session):
+    if check_username_exists(request.username, session):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username is already taken.")

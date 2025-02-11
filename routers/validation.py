@@ -12,7 +12,9 @@ def check_username(
     session: SessionDep
 ):
     if check_username_exists(username, session):
-        HTTPException(status_code=400, detail="Username is already taken.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username is already taken.")
     
     return JSONResponse(
         status_code=status.HTTP_200_OK,

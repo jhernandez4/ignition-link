@@ -7,7 +7,7 @@ from firebase_admin import auth, exceptions
 from typing import Annotated
 from ..database import SessionDep, User
 from sqlmodel import SQLModel, select
-from pydantic import EmailStr
+from pydantic import EmailStr, BaseModel
 import datetime
 from .validation import check_username_exists
 
@@ -79,9 +79,12 @@ def load_admin_emails():
 TokenDep = Annotated[dict, Depends(verify_firebase_token)]
 CookieDep = Annotated[dict, Depends(verify_firebase_session_cookie)]
 
+class SignUpRequest(BaseModel):
+    username: str
+
 @router.post("/signup")
 def register_user(
-    username: Annotated[str, Form()],
+    request: SignUpRequest,
     id_token: TokenDep, 
     session: SessionDep,
 ):
@@ -96,7 +99,7 @@ def register_user(
         raise HTTPException(status_code=400, detail="User already exists.")
 
     # Check if the username is already taken
-    username_taken = check_username_exists(username, session)
+    username_taken = check_username_exists(request.username, session)
 
     if username_taken:
         raise HTTPException(status_code=400, detail="Username is already taken.")
@@ -109,7 +112,7 @@ def register_user(
     # Create new user
     new_user = User(
         firebase_uid=id_token['uid'],
-        username=username,
+        username=request.username,
         email=firebase_user.email,
         is_admin=is_admin
     )

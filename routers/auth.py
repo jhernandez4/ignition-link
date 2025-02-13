@@ -38,8 +38,8 @@ async def verify_firebase_token(token: str = Depends(oauth2_scheme)):
         )
 
 # Dependency for verifying the session cookie
-async def verify_firebase_session_cookie(session_cookie: str = Cookie(None)):
-    if not session_cookie:
+async def verify_firebase_session_cookie(session: Annotated[str | None, Cookie()] = None):
+    if not session:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Session cookie is missing or invalid",
@@ -48,7 +48,7 @@ async def verify_firebase_session_cookie(session_cookie: str = Cookie(None)):
     
     try:
         # Decode and verify the session cookie using Firebase Admin SDK
-        decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
+        decoded_claims = auth.verify_session_cookie(session, check_revoked=True)
         user_id = decoded_claims['uid']
 
         if not user_id:
@@ -153,12 +153,12 @@ async def session_login(
 
         # Set the session cookie in the response
         response.set_cookie(
-            'session',
-            session_cookie,
+            key='session',
+            value=session_cookie,
             expires=expires,
             httponly=True,
             secure=True,
-            samesite="strict"
+            samesite="none"
         )
 
         return response

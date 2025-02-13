@@ -1,5 +1,5 @@
 from fastapi import ( 
-    APIRouter, HTTPException, Depends, status, Cookie, Form
+    APIRouter, HTTPException, Depends, status, Cookie, Form,
 )
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
@@ -29,7 +29,7 @@ async def verify_firebase_token(token: str = Depends(oauth2_scheme)):
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        return decoded_token 
+        return token 
 
     except Exception as e:
         raise HTTPException(
@@ -85,14 +85,15 @@ class SignUpRequest(BaseModel):
 @router.post("/signup")
 def register_user(
     request: SignUpRequest,
-    id_token: TokenDep, 
+    token: TokenDep, 
     session: SessionDep,
 ):
-    firebase_user = auth.get_user(uid=id_token['uid'])
+    decoded_token = auth.verify_id_token(token)
+    firebase_user = auth.get_user(uid=decoded_token['uid'])
 
     # Check if user with the same firebase_uid already exists
     existing_user = session.exec(
-        select(User).where(User.firebase_uid == id_token['uid'])
+        select(User).where(User.firebase_uid == decoded_token['uid'])
     ).first()
 
     if existing_user:
@@ -111,7 +112,7 @@ def register_user(
 
     # Create new user
     new_user = User(
-        firebase_uid=id_token['uid'],
+        firebase_uid=decoded_token['uid'],
         username=request.username,
         email=firebase_user.email,
         is_admin=is_admin
@@ -135,8 +136,8 @@ def register_user(
     )
 
 @router.post("/session-login")
-def session_login(
-    id_token: TokenDep,
+async def session_login(
+    token: TokenDep
 ):
     # Set session expiration to 5 days.
     expires_in = datetime.timedelta(days=5)
@@ -144,15 +145,20 @@ def session_login(
     try:
         # Create the session cookie. This will also verify the ID token in the process.
         # The session cookie will have the same claims as the ID token.
-        session_cookie = auth.create_session_cookie(id_token, expires_in=expires_in)
+        session_cookie = auth.create_session_cookie(token, expires_in=expires_in)
         response = JSONResponse({'status': 'success'})
 
         # Set cookie policy for session cookie.
-        expires = datetime.datetime.now() + expires_in
+        expires = datetime.datetime.now(datetime.UTC) + expires_in
 
         # Set the session cookie in the response
         response.set_cookie(
-            'session', session_cookie, expires=expires, httponly=True, secure=True
+            'session',
+            session_cookie,
+            expires=expires,
+            httponly=True,
+            secure=True,
+            samesite="strict"
         )
 
         return response

@@ -175,7 +175,7 @@ def session_logout(
         auth.revoke_refresh_tokens(decoded_claims['sub'])
         response = JSONResponse({"status": "success"})
         # Clear the session cookie by setting expires to 0 (cookie will be deleted)
-        response.set_cookie('session', '', expires=0, httponly=True, secure=True)
+        response.set_cookie('session', '', expires=0, httponly=True, secure=True, samesite="none")
 
         return response
     

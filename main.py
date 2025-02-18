@@ -11,7 +11,8 @@ app = FastAPI()
 
 origins = [
     "http://localhost",
-    "http://localhost:5173"
+    "http://localhost:5173",
+    "https://ignitionlink-frontend.vercel.app/login"
 ]
 
 app.add_middleware(

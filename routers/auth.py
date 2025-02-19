@@ -88,8 +88,11 @@ def register_user(
     token: TokenDep, 
     session: SessionDep,
 ):
-    decoded_token = auth.verify_id_token(token)
-    firebase_user = auth.get_user(uid=decoded_token['uid'])
+    # Check if the username is already taken
+    username_taken = check_username_exists(request.username, session)
+
+    if username_taken:
+        raise HTTPException(status_code=400, detail="Username is already taken.")
 
     # Check if user with the same firebase_uid already exists
     existing_user = session.exec(
@@ -99,11 +102,8 @@ def register_user(
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists.")
 
-    # Check if the username is already taken
-    username_taken = check_username_exists(request.username, session)
-
-    if username_taken:
-        raise HTTPException(status_code=400, detail="Username is already taken.")
+    decoded_token = auth.verify_id_token(token)
+    firebase_user = auth.get_user(uid=decoded_token['uid'])
 
     # Set admin role 
     admin_emails = load_admin_emails()

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import User, create_db_and_tables, SessionDep
+from .database import User, create_db_and_tables, convert_csv_to_db, SessionDep
 from .routers import auth, validation
 import firebase_admin
 from firebase_admin import credentials
@@ -29,6 +29,7 @@ app.include_router(validation.router)
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
+    convert_csv_to_db("vehicles.csv")
 
     # Initialize Firebase
     firebase_key_path = os.getenv("FIREBASE_KEY_PATH")

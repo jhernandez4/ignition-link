@@ -28,8 +28,12 @@ app.include_router(validation.router)
 
 @app.on_event("startup")
 def on_startup():
+    VEHICLES_CSV_PATH = os.getenv("VEHICLES_CSV_PATH")
+    if not VEHICLES_CSV_PATH:
+        raise RuntimeError("VEHICLES_CSV_PATH is not set in the environment variables.")
+
     create_db_and_tables()
-    convert_csv_to_db("vehicles.csv")
+    convert_csv_to_db(VEHICLES_CSV_PATH)
 
     # Initialize Firebase
     firebase_key_path = os.getenv("FIREBASE_KEY_PATH")

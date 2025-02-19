@@ -1,11 +1,13 @@
 from typing import Annotated
 from fastapi import Depends
-from sqlmodel import Field, Session, SQLModel, create_engine
+from sqlmodel import Field, Session, SQLModel, create_engine, select
 import os
 import csv
 from dotenv import load_dotenv
 from pydantic import EmailStr
 from datetime import datetime, timezone 
+import requests
+import io
 
 load_dotenv()
 
@@ -40,7 +42,24 @@ def get_session():
         yield session
 
 def convert_csv_to_db(filename: str):
-    with open(filename, newline="", encoding="utf-8") as file:
+    with Session(engine) as session:
+        # Check if the Vehicles table has any records
+        existing_vehicle = session.exec(select(Vehicles)).first()
+        if existing_vehicle:
+            print("Database already populated. Skipping CSV import.")
+            return  
+
+    print("Database is empty. Populating from CSV...")
+
+    if filename.startswith("http"):  # Check if it's a URL
+        response = requests.get(filename)
+        response.raise_for_status() 
+        file_content = io.StringIO(response.text)
+
+    else:
+        file_content = open(filename, newline="", encoding="utf-8")  # Open local file
+
+    with file_content as file:
         cars = csv.DictReader(file)
         with Session(engine) as session:
             try:

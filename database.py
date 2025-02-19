@@ -41,20 +41,26 @@ def get_session():
 
 def convert_csv_to_db(filename: str):
     with open(filename, newline="", encoding="utf-8") as file:
-        cars = csv.reader(file)
-        next(cars, None)
+        cars = csv.DictReader(file)
         with Session(engine) as session:
-            for row in cars:
-                if len(row) < 3:  # Ensure row has all required fields
-                    print(f"Skipping malformed row: {row}")
-                    continue
-                
-                try:
-                    vehicle = Vehicles(make=row[0], model=row[1], year=int(row[2]))
-                    session.add(vehicle)
-                except ValueError:
-                    print(f"Skipping Incorrect Row: {row}")
-            session.commit()
-    print("Successfully Converted")
+            try:
+                for row in cars:
+                    if len(row) < 3:  # Ensure row has all required fields
+                        print(f"Skipping malformed row: {row}")
+                        continue
+                    
+                    try:
+                        vehicle = Vehicles(make=str(row['make']), model=str(row['model']), year=int(row['year']))
+                        session.add(vehicle)
+                        print(f"Adding vehicle to db: {vehicle}")
+                    except ValueError as e:
+                        print(f"Skipping Incorrect Row: {row}, Error: {e}")
+                session.commit()
+                print("Commit Successful!")
+            except Exception as e:
+                session.rollback()
+                print(f"Error occurred: {e}")
+            finally:
+                session.close()
 
 SessionDep = Annotated[Session, Depends(get_session)]

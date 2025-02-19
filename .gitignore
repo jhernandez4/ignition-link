@@ -4,3 +4,4 @@ __pycache__/
 virtualEnv/
 ignition-link*.json
 admin_emails.txt
+vehicles.csv

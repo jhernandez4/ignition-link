@@ -1,12 +1,16 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
-from ..database import SessionDep, User
-from sqlmodel import select
+from typing import Annotated
+from sqlmodel import Session
 from pydantic import BaseModel
+from .dependencies import check_username_exists, get_session
 
 router = APIRouter(
     tags=["validation"]
 )
+
+# Dependency injection
+SessionDep = Annotated[Session, Depends(get_session)]
 
 class UsernameCheckRequest(BaseModel):
     username: str
@@ -28,12 +32,3 @@ def check_username(
         }
     ) 
    
-def check_username_exists(
-    username_to_validate,
-    session
-):
-    existing_user = session.exec(
-        select(User).where(User.username == username_to_validate)
-    ).first()
-
-    return bool(existing_user) 

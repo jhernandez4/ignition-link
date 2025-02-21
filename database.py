@@ -1,5 +1,3 @@
-from typing import Annotated
-from fastapi import Depends
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 import os
 import csv
@@ -35,11 +33,6 @@ engine = create_engine(PSQL_URI)
 # Create the models for all models defined above
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
-
-# Create a database session
-def get_session():
-    with Session(engine) as session:
-        yield session
 
 def convert_csv_to_db(filename: str):
     with Session(engine) as session:
@@ -81,5 +74,3 @@ def convert_csv_to_db(filename: str):
                 print(f"Error occurred: {e}")
             finally:
                 session.close()
-
-SessionDep = Annotated[Session, Depends(get_session)]

@@ -1,83 +1,25 @@
 from fastapi import ( 
-    APIRouter, HTTPException, Depends, status, Cookie, Form,
+    APIRouter, HTTPException, Depends, status
 )
 from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordBearer
 from firebase_admin import auth, exceptions
 from typing import Annotated
-from ..database import SessionDep, User
-from sqlmodel import SQLModel, select
-from pydantic import EmailStr, BaseModel
+from ..database import User
+from sqlmodel import select, Session
+from pydantic import BaseModel
 import datetime
 from .validation import check_username_exists
+from .dependencies import (
+    verify_firebase_token, verify_firebase_session_cookie,
+    load_admin_emails, get_session
+)
 
 router = APIRouter()
 
-# OAuth2PasswordBearer will fetch the token from the "Authorization" header
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-async def verify_firebase_token(token: str = Depends(oauth2_scheme)):
-    try:
-        # Decode and verify the token using Firebase Admin SDK
-        decoded_token = auth.verify_id_token(token)
-        user_id = decoded_token['uid']
-        
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token is invalid or expired",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-        return token 
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Token verification failed: {str(e)}",
-        )
-
-# Dependency for verifying the session cookie
-async def verify_firebase_session_cookie(session: Annotated[str | None, Cookie()] = None):
-    if not session:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session cookie is missing or invalid",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    try:
-        # Decode and verify the session cookie using Firebase Admin SDK
-        decoded_claims = auth.verify_session_cookie(session, check_revoked=True)
-        user_id = decoded_claims['uid']
-
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Session cookie is invalid or expired",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-        return decoded_claims
-
-    except exceptions.FirebaseError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Session cookie verification failed: {str(e)}",
-        )
-
-def load_admin_emails():
-    try:
-        with open('admin_emails.txt', 'r') as file:
-            emails = file.read().splitlines()  # Read each line into a list
-            return emails
-    except FileNotFoundError:
-        return []  
-    except Exception as e:
-        return []  
-
+# Dependency injections
 TokenDep = Annotated[dict, Depends(verify_firebase_token)]
 CookieDep = Annotated[dict, Depends(verify_firebase_session_cookie)]
+SessionDep = Annotated[Session, Depends(get_session)]
 
 class SignUpRequest(BaseModel):
     username: str
@@ -94,6 +36,9 @@ def register_user(
     if username_taken:
         raise HTTPException(status_code=400, detail="Username is already taken.")
 
+    decoded_token = auth.verify_id_token(token)
+    firebase_user = auth.get_user(uid=decoded_token['uid'])
+
     # Check if user with the same firebase_uid already exists
     existing_user = session.exec(
         select(User).where(User.firebase_uid == decoded_token['uid'])
@@ -102,13 +47,9 @@ def register_user(
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists.")
 
-    decoded_token = auth.verify_id_token(token)
-    firebase_user = auth.get_user(uid=decoded_token['uid'])
-
     # Set admin role 
     admin_emails = load_admin_emails()
     is_admin = firebase_user.email in admin_emails
-
 
     # Create new user
     new_user = User(

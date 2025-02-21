@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import User, create_db_and_tables, convert_csv_to_db, SessionDep
+from .database import create_db_and_tables, convert_csv_to_db
 from .routers import auth, validation
 import firebase_admin
 from firebase_admin import credentials

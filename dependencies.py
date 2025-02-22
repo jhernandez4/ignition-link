@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status, Cookie
 from fastapi.security import OAuth2PasswordBearer
-from ..database import User, engine
+from .database import User, engine
 from sqlmodel import select, Session
 from firebase_admin import auth, exceptions
 from typing import Annotated

@@ -9,7 +9,7 @@ from sqlmodel import select, Session
 from pydantic import BaseModel
 import datetime
 from .validation import check_username_exists
-from .dependencies import (
+from ..dependencies import (
     verify_firebase_token, verify_firebase_session_cookie,
     load_admin_emails, get_session
 )

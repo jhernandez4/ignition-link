@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from typing import Annotated
 from sqlmodel import Session
 from pydantic import BaseModel
-from .dependencies import check_username_exists, get_session
+from ..dependencies import check_username_exists, get_session
 
 router = APIRouter(
     tags=["validation"]

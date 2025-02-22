@@ -49,7 +49,7 @@ def edit_user_me(request: ProfileChangeRequest, session: SessionDep):
        if username_taken:
            raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username is already taken"
+                detail=f"Username '{request.username}' is already taken"
             )
 
        current_user.username = request.username

@@ -93,7 +93,10 @@ def get_user_from_uid(firebase_uid, session):
     
     return user
 
-def get_user_from_cookie(decoded_claims, session):
+def get_user_from_cookie(
+    decoded_claims: Annotated[dict, Depends(verify_firebase_session_cookie)],
+    session: Annotated[Session, Depends(get_session)]
+):
     current_user_uid = decoded_claims['uid']
     
     try:

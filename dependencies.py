@@ -82,17 +82,24 @@ def load_admin_emails():
         return []  
 
 def get_user_from_uid(firebase_uid, session):
-    user = session.exec(
-        select(User).where(User.firebase_uid == firebase_uid)
-    ).first()
+    try:
+        user = session.exec(
+            select(User).where(User.firebase_uid == firebase_uid)
+        ).first()
 
-    if not user:
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with UID {firebase_uid} does not exist"
+            )
+
+        return user
+    except SQLAlchemyError as e:
+        # Log the error here if needed
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with UID {firebase_uid} does not exist"
-        )
-    
-    return user
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while querying the database."
+        ) from e
 
 def get_user_from_id(user_id, session):
     try:

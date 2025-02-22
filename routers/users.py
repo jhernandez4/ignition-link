@@ -67,7 +67,7 @@ def edit_user_me(request: ProfileChangeRequest, session: SessionDep):
             status_code=status.HTTP_200_OK,
             content={
                 "message": "Current user profile updated successfully",
-                "user": {
+                "data": {
                     "id": current_user.id,
                     "username": current_user.username,
                     "bio": current_user.bio,

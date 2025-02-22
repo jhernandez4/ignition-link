@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from ..dependencies import (
     get_session, verify_firebase_session_cookie, get_user_from_uid,
-    check_username_exists 
+    check_username_exists, get_user_from_id
 )
 from typing import Annotated
 from sqlmodel import Session
@@ -20,7 +20,7 @@ class UIDRequest(BaseModel):
     uid: str
 
 @router.get("/me")
-async def read_user_me(request: UIDRequest, session: SessionDep):
+def read_user_me(request: UIDRequest, session: SessionDep):
     current_user = get_user_from_uid(request.uid, session)
 
     return JSONResponse(
@@ -41,7 +41,7 @@ class ProfileChangeRequest(BaseModel):
     bio: str | None = None
 
 @router.put("/me")
-async def edit_user_me(request: ProfileChangeRequest, session: SessionDep):
+def edit_user_me(request: ProfileChangeRequest, session: SessionDep):
     current_user = get_user_from_uid(request.uid, session)
     
     if request.username is not None:
@@ -80,3 +80,19 @@ async def edit_user_me(request: ProfileChangeRequest, session: SessionDep):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while updating the profile"
         )
+
+@router.get("/{user_id}")
+def read_user_by_id(user_id: int, session: SessionDep):
+    user = get_user_from_id(user_id, session)
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": f"User with ID '{user_id}' found",
+            "data": {
+                "id": user.id,
+                "username": user.username,
+                "bio": user.bio
+            }
+        }
+    )

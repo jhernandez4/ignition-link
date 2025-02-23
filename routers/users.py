@@ -30,7 +30,8 @@ def read_user_me(current_user: CurrentUserDep, session: SessionDep):
             "data": {
                 "id": current_user.id,
                 "username": current_user.username,
-                "bio": current_user.bio
+                "bio": current_user.bio,
+                "is_admin": current_user.is_admin
             }
         }
     )

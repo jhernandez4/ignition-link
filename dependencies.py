@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException, status, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from .database import User, engine
 from sqlmodel import select, Session
+from sqlalchemy.exc import SQLAlchemyError
 from firebase_admin import auth, exceptions
 from typing import Annotated
 
@@ -79,3 +80,61 @@ def load_admin_emails():
         return []  
     except Exception as e:
         return []  
+
+def get_user_from_uid(firebase_uid, session):
+    try:
+        user = session.exec(
+            select(User).where(User.firebase_uid == firebase_uid)
+        ).first()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with UID {firebase_uid} does not exist"
+            )
+
+        return user
+    except SQLAlchemyError as e:
+        # Log the error here if needed
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while querying the database."
+        ) from e
+
+def get_user_from_id(user_id, session):
+    try:
+        user = session.exec(
+            select(User).where(User.id == user_id)
+        ).first()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {user_id} does not exist"
+            )
+
+        return user
+    except SQLAlchemyError as e:
+        # Log the error here if needed
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while querying the database."
+        ) from e
+
+def get_user_from_cookie(
+    decoded_claims: Annotated[dict, Depends(verify_firebase_session_cookie)],
+    session: Annotated[Session, Depends(get_session)]
+):
+    current_user_uid = decoded_claims['uid']
+    
+    try:
+        user = get_user_from_uid(current_user_uid, session)
+    except HTTPException as e:
+        raise e  # Forward the original exception
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while retrieving user"
+        ) from e
+
+    return user

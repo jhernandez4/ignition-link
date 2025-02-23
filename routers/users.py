@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from ..dependencies import (
     get_session, verify_firebase_session_cookie, get_user_from_uid,
-    check_username_exists, get_user_from_id
+    check_username_exists, get_user_from_id, get_user_from_cookie
 )
 from typing import Annotated
 from sqlmodel import Session
@@ -15,13 +15,13 @@ router = APIRouter(
 )
 
 SessionDep = Annotated[Session, Depends(get_session)]
+CurrentUserDep = Annotated[Session, Depends(get_user_from_cookie)]
 
 class UIDRequest(BaseModel):
     uid: str
 
 @router.get("/me")
-def read_user_me(request: UIDRequest, session: SessionDep):
-    current_user = get_user_from_uid(request.uid, session)
+def read_user_me(current_user: CurrentUserDep, session: SessionDep):
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -36,14 +36,15 @@ def read_user_me(request: UIDRequest, session: SessionDep):
     )
 
 class ProfileChangeRequest(BaseModel):
-    uid: str
     username: str | None = None
     bio: str | None = None
 
 @router.put("/me")
-def edit_user_me(request: ProfileChangeRequest, session: SessionDep):
-    current_user = get_user_from_uid(request.uid, session)
-    
+def edit_user_me(
+    current_user: CurrentUserDep,
+    request: ProfileChangeRequest,
+    session: SessionDep
+):
     if request.username is not None:
        username_taken = check_username_exists(request.username, session)
        if username_taken:

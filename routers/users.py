@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
+from sqlmodel import select, Session
+from ..database import User
 from ..dependencies import (
-    get_session, verify_firebase_session_cookie, get_user_from_uid,
-    check_username_exists, get_user_from_id, get_user_from_cookie,
-    get_user_from_username
+    get_session, verify_firebase_session_cookie,
+    check_username_exists, get_user_from_cookie,
 )
 from typing import Annotated
 from sqlmodel import Session
@@ -86,7 +88,23 @@ def edit_user_me(
 
 @router.get("/{user_id}")
 def read_user_by_id(user_id: int, session: SessionDep):
-    user = get_user_from_id(user_id, session)
+    try:
+        user = session.exec(
+            select(User).where(User.id == user_id)
+        ).first()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {user_id} does not exist"
+            )
+
+    except SQLAlchemyError as e:
+        # Log the error here if needed
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while querying the database."
+        ) from e
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -102,7 +120,22 @@ def read_user_by_id(user_id: int, session: SessionDep):
 
 @router.get("/")
 def read_user_by_username(username: str, session: SessionDep):
-    user = get_user_from_username(username, session)
+    try:
+        user = session.exec(
+            select(User).where(User.username == username)
+        ).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with username {username} does not exist"
+            )
+    except SQLAlchemyError as e:
+        # Log the error here if needed
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while querying the database."
+        ) from e
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,

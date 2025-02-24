@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from ..dependencies import (
     get_session, verify_firebase_session_cookie, get_user_from_uid,
-    check_username_exists, get_user_from_id, get_user_from_cookie
+    check_username_exists, get_user_from_id, get_user_from_cookie,
+    get_user_from_username
 )
 from typing import Annotated
 from sqlmodel import Session
@@ -91,6 +92,22 @@ def read_user_by_id(user_id: int, session: SessionDep):
         status_code=status.HTTP_200_OK,
         content={
             "message": f"User with ID '{user_id}' found",
+            "data": {
+                "id": user.id,
+                "username": user.username,
+                "bio": user.bio
+            }
+        }
+    )
+
+@router.get("/")
+def read_user_by_username(username: str, session: SessionDep):
+    user = get_user_from_username(username, session)
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": f"User with username '{username}' found",
             "data": {
                 "id": user.id,
                 "username": user.username,

@@ -120,6 +120,26 @@ def get_user_from_id(user_id, session):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while querying the database."
         ) from e
+    
+def get_user_from_username(username, session):
+    try:
+        user = session.exec(
+            select(User).where(User.username == username)
+        ).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with username {username} does not exist"
+            )
+
+        return user
+    except SQLAlchemyError as e:
+        # Log the error here if needed
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while querying the database."
+        ) from e
 
 def get_user_from_cookie(
     decoded_claims: Annotated[dict, Depends(verify_firebase_session_cookie)],

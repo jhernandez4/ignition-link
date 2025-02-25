@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select, Session
@@ -86,6 +86,45 @@ def edit_user_me(
             detail="An error occurred while updating the profile"
         )
 
+@router.get("/query")
+def get_users_by_username(
+    username: str,
+    session: SessionDep,
+    offset: int = 0,
+    # Less than or equal to 100; default to 100
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    try:
+        users = session.exec(
+            select(User)
+            .where(User.username.ilike(f"%{username}%"))
+            .offset(offset)
+            .limit(limit)
+        ).all()
+
+        if not users:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={"message": f"No users found matching '{username}'", "data": []}
+            )
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "message": f"Found {len(users)} user(s) matching '{username}'",
+                "data": [
+                    {"id": user.id, "username": user.username, "bio": user.bio}
+                    for user in users
+                ]
+            }
+        )
+
+    except SQLAlchemyError:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"message": "An error occurred while querying the database."}
+        )
+
 @router.get("/{user_id}")
 def read_user_by_id(user_id: int, session: SessionDep):
     try:
@@ -100,7 +139,6 @@ def read_user_by_id(user_id: int, session: SessionDep):
             )
 
     except SQLAlchemyError as e:
-        # Log the error here if needed
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while querying the database."
@@ -131,7 +169,6 @@ def read_user_by_username(username: str, session: SessionDep):
                 detail=f"User with username {username} does not exist"
             )
     except SQLAlchemyError as e:
-        # Log the error here if needed
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while querying the database."

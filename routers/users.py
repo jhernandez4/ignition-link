@@ -118,7 +118,7 @@ def read_user_by_id(user_id: int, session: SessionDep):
         }
     )
 
-@router.get("/")
+@router.get("")
 def read_user_by_username(username: str, session: SessionDep):
     try:
         user = session.exec(

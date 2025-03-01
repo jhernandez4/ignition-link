@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
+from sqlmodel import select, Session
+from ..database import User
 from ..dependencies import (
-    get_session, verify_firebase_session_cookie, get_user_from_uid,
-    check_username_exists, get_user_from_id, get_user_from_cookie
+    get_session, verify_firebase_session_cookie,
+    check_username_exists, get_user_from_cookie,
 )
 from typing import Annotated
 from sqlmodel import Session
@@ -83,14 +86,98 @@ def edit_user_me(
             detail="An error occurred while updating the profile"
         )
 
+@router.get("/query")
+def get_users_by_username(
+    username: str,
+    session: SessionDep,
+    offset: int = 0,
+    # Less than or equal to 100; default to 100
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    try:
+        users = session.exec(
+            select(User)
+            .where(User.username.ilike(f"%{username}%"))
+            .offset(offset)
+            .limit(limit)
+        ).all()
+
+        if not users:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={"message": f"No users found matching '{username}'", "data": []}
+            )
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "message": f"Found {len(users)} user(s) matching '{username}'",
+                "data": [
+                    {"id": user.id, "username": user.username, "bio": user.bio}
+                    for user in users
+                ]
+            }
+        )
+
+    except SQLAlchemyError:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"message": "An error occurred while querying the database."}
+        )
+
 @router.get("/{user_id}")
 def read_user_by_id(user_id: int, session: SessionDep):
-    user = get_user_from_id(user_id, session)
+    try:
+        user = session.exec(
+            select(User).where(User.id == user_id)
+        ).first()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {user_id} does not exist"
+            )
+
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while querying the database."
+        ) from e
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={
             "message": f"User with ID '{user_id}' found",
+            "data": {
+                "id": user.id,
+                "username": user.username,
+                "bio": user.bio
+            }
+        }
+    )
+
+@router.get("")
+def read_user_by_username(username: str, session: SessionDep):
+    try:
+        user = session.exec(
+            select(User).where(User.username == username)
+        ).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with username {username} does not exist"
+            )
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while querying the database."
+        ) from e
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": f"User with username '{username}' found",
             "data": {
                 "id": user.id,
                 "username": user.username,

@@ -20,9 +20,6 @@ router = APIRouter(
 SessionDep = Annotated[Session, Depends(get_session)]
 CurrentUserDep = Annotated[Session, Depends(get_user_from_cookie)]
 
-class UIDRequest(BaseModel):
-    uid: str
-
 @router.get("/me")
 def read_user_me(current_user: CurrentUserDep, session: SessionDep):
 
@@ -34,7 +31,8 @@ def read_user_me(current_user: CurrentUserDep, session: SessionDep):
                 "id": current_user.id,
                 "username": current_user.username,
                 "bio": current_user.bio,
-                "is_admin": current_user.is_admin
+                "is_admin": current_user.is_admin,
+                "profile_pic_url": current_user.profile_pic_url
             }
         }
     )
@@ -42,6 +40,7 @@ def read_user_me(current_user: CurrentUserDep, session: SessionDep):
 class ProfileChangeRequest(BaseModel):
     username: str | None = None
     bio: str | None = None
+    profile_pic_url: str | None = None
 
 @router.put("/me")
 def edit_user_me(
@@ -62,6 +61,9 @@ def edit_user_me(
     if request.bio is not None:
        current_user.bio = request.bio
 
+    if request.profile_pic_url is not None:
+        current_user.profile_pic_url = request.profile_pic_url
+
     try:
         # Save changes to the database
         session.add(current_user)
@@ -76,6 +78,7 @@ def edit_user_me(
                     "id": current_user.id,
                     "username": current_user.username,
                     "bio": current_user.bio,
+                    "profile_pic_url": current_user.profile_pic_url
                 }
             }
         )
@@ -113,7 +116,12 @@ def get_users_by_username(
             content={
                 "message": f"Found {len(users)} user(s) matching '{username}'",
                 "data": [
-                    {"id": user.id, "username": user.username, "bio": user.bio}
+                    {
+                        "id": user.id,
+                        "username": user.username,
+                        "bio": user.bio,
+                        "profile_pic_url": user.profile_pic_url
+                    }
                     for user in users
                 ]
             }
@@ -151,7 +159,8 @@ def read_user_by_id(user_id: int, session: SessionDep):
             "data": {
                 "id": user.id,
                 "username": user.username,
-                "bio": user.bio
+                "bio": user.bio,
+                "profile_pic_url": user.profile_pic_url
             }
         }
     )
@@ -181,7 +190,8 @@ def read_user_by_username(username: str, session: SessionDep):
             "data": {
                 "id": user.id,
                 "username": user.username,
-                "bio": user.bio
+                "bio": user.bio,
+                "profile_pic_url": user.profile_pic_url
             }
         }
     )

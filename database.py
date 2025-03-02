@@ -17,6 +17,7 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_admin: bool = Field(default=False)
     bio: str = Field(default="TESTING DEFAULT BIO")
+    profile_pic_url: str = Field(default="https://i.imgur.com/L5AoglL.png")
 
 class Vehicles(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)

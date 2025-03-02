@@ -20,9 +20,6 @@ router = APIRouter(
 SessionDep = Annotated[Session, Depends(get_session)]
 CurrentUserDep = Annotated[Session, Depends(get_user_from_cookie)]
 
-class UIDRequest(BaseModel):
-    uid: str
-
 @router.get("/me")
 def read_user_me(current_user: CurrentUserDep, session: SessionDep):
 

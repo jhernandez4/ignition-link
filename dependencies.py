@@ -1,10 +1,12 @@
 from fastapi import Depends, HTTPException, status, Cookie
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.encoders import jsonable_encoder
 from .database import User, engine
 from sqlmodel import select, Session
 from sqlalchemy.exc import SQLAlchemyError
 from firebase_admin import auth, exceptions
 from typing import Annotated
+from pydantic import BaseModel
 
 # Create a database session
 def get_session():
@@ -17,6 +19,10 @@ def check_username_exists(username_to_validate, session):
     ).first()
 
     return bool(existing_user) 
+
+# Used to return Pydantic model in JSONResponse
+def encode_model_to_json(model: BaseModel):
+    return jsonable_encoder(model.model_dump())
 
 # OAuth2PasswordBearer will fetch the token from the "Authorization" header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from typing import Annotated
 from sqlmodel import select, Session
-from ..dependencies import get_session, get_user_from_cookie
+from ..dependencies import get_session, get_user_from_cookie, encode_model_to_json
 from pydantic import BaseModel
 from ..database import Post
 from datetime import datetime, timezone 
@@ -15,22 +16,22 @@ router = APIRouter(
 SessionDep = Annotated[Session, Depends(get_session)]
 CurrentUserDep = Annotated[Session, Depends(get_user_from_cookie)]
 
-# class PostResponse(BaseModel):
-#     id: int
-#     post_iamge_url: str
-#     caption: str
-#     created_at: datetime
-#     edited_at: datetime | None = None
-#     user_id: int
+class PostResponse(BaseModel):
+    id: int
+    post_iamge_url: str
+    caption: str | None = None
+    created_at: datetime
+    edited_at: datetime | None = None
+    user_id: int
 
 
-class CreatePostReqeuest(BaseModel):
+class CreatePostRequest(BaseModel):
     post_image_url: str
     caption: str | None = None
 
-@router.post("")
+@router.post("", response_model=PostResponse)
 def create_post(
-    request: CreatePostReqeuest,
+    request: CreatePostRequest,
     current_user: CurrentUserDep,
     session: SessionDep,
 ):
@@ -48,14 +49,7 @@ def create_post(
         status_code=status.HTTP_201_CREATED,
         content={
             "message": "Post created successfully",
-            "post": {
-                "id": new_post.id,
-                "post_image_url": new_post.post_image_url,
-                "caption": new_post.caption,
-                "created_at": new_post.created_at.isoformat(),
-                "edited_at": new_post.edited_at.isoformat() if new_post.edited_at else None,
-                "user_id": new_post.user_id
-            }
+            "post": encode_model_to_json(new_post) 
         }
     )
 

@@ -93,3 +93,24 @@ def edit_post(
             "post": encode_model_to_json(post_to_edit)
         }
     )
+
+@router.get("/{post_id}", response_model=PostResponse)
+def get_post_by_id(post_id: int, session: SessionDep):
+    post = session.exec(
+        select(Post)
+        .where(Post.id == post_id)
+    ).first()
+
+    if post is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No post found with the ID {post_id}"
+        )
+    
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": "Post retrieved successfully!",
+            "post": encode_model_to_json(post)
+        }
+    )

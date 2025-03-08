@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import create_db_and_tables, convert_csv_to_db
-from .routers import auth, validation, users
+from .routers import auth, validation, users, posts
 import firebase_admin
 from firebase_admin import credentials
 from dotenv import load_dotenv
@@ -26,6 +26,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(validation.router)
 app.include_router(users.router)
+app.include_router(posts.router)
 
 @app.on_event("startup")
 def on_startup():

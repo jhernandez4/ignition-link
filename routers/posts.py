@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from typing import Annotated
@@ -112,5 +112,34 @@ def get_post_by_id(post_id: int, session: SessionDep):
         content={
             "message": "Post retrieved successfully!",
             "post": encode_model_to_json(post)
+        }
+    )
+
+@router.get("", response_model=PostResponse)
+def get_posts_from_user_id(
+    user_id: int,
+    session: SessionDep,
+    offset: int = 0,
+    # Less than or equal to 100; default to 100
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    posts_from_user = session.exec(
+        select(Post)
+        .where(Post.user_id == user_id)
+        .offset(offset)
+        .limit(limit)
+    ).all()
+
+    if posts_from_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No posts found from user with ID {user_id}"
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": f"Successfully retrieved {len(posts_from_user)} post(s) from user with ID {user_id}",
+            "posts": [encode_model_to_json(post) for post in posts_from_user] 
         }
     )

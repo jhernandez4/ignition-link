@@ -71,7 +71,7 @@ def edit_post(
     if post_to_edit is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found."
+            detail=f"No post found with the ID {post_id}"
         )
     if post_to_edit.user_id != current_user.id:
         raise HTTPException(

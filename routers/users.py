@@ -78,6 +78,7 @@ def edit_user_me(
                     "id": current_user.id,
                     "username": current_user.username,
                     "bio": current_user.bio,
+                    "is_admin": current_user.is_admin,
                     "profile_pic_url": current_user.profile_pic_url
                 }
             }

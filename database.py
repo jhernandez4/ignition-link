@@ -1,4 +1,6 @@
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import (
+    Field, Session, SQLModel, create_engine, select, Relationship
+)
 import os
 import csv
 from dotenv import load_dotenv
@@ -18,6 +20,19 @@ class User(SQLModel, table=True):
     is_admin: bool = Field(default=False)
     bio: str = Field(default="TESTING DEFAULT BIO")
     profile_pic_url: str = Field(default="https://i.imgur.com/L5AoglL.png")
+
+    posts: list["Post"] = Relationship(back_populates="user")
+
+class Post(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    post_image_url: str # Every post must have an image url 
+    caption: str | None = Field(default=None)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    edited_at: datetime | None = Field(default=None)
+
+    # Every post must come from a user, so can't be none
+    user_id: int = Field(foreign_key="user.id")
+    user: User = Relationship(back_populates="posts")
 
 class Vehicles(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)

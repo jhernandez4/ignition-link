@@ -53,3 +53,43 @@ def create_post(
         }
     )
 
+class EditPostRequest(BaseModel):
+    caption: str
+
+@router.put("/{post_id}", response_model=PostResponse)
+def edit_post(
+    request: EditPostRequest,
+    current_user: CurrentUserDep,
+    session: SessionDep,
+    post_id: int
+):
+    post_to_edit = session.exec(
+        select(Post)
+        .where(Post.id == post_id)
+    ).first()
+
+    if post_to_edit is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found."
+        )
+    if post_to_edit.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to edit this post."
+        )
+    
+    post_to_edit.caption = request.caption
+    post_to_edit.edited_at = datetime.now(timezone.utc)
+
+    session.add(post_to_edit)
+    session.commit()
+    session.refresh(post_to_edit)
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": "Post edited successfully!",
+            "post": encode_model_to_json(post_to_edit)
+        }
+    )

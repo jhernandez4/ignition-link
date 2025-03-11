@@ -1,10 +1,13 @@
 from pydantic import BaseModel
 from datetime import datetime, timezone 
+from .database import User, Post
 
-class PostResponse(BaseModel):
+class UserResponse(BaseModel):
     id: int
-    post_iamge_url: str
-    caption: str | None = None
-    created_at: datetime
-    edited_at: datetime | None = None
-    user_id: int
+    username: str
+    bio: str
+    is_admin: bool
+    profile_pic_url: str
+    class Config:
+        # Enable support for ORM mode
+        from_attributes = True

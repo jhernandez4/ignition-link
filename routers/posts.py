@@ -5,7 +5,6 @@ from sqlmodel import select, Session
 from pydantic import BaseModel
 from datetime import datetime, timezone 
 from ..database import Post
-from ..models import PostResponse
 from ..dependencies import (
     get_session, get_user_from_cookie, encode_model_to_json
 )
@@ -22,7 +21,7 @@ class CreatePostRequest(BaseModel):
     post_image_url: str
     caption: str | None = None
 
-@router.post("", response_model=PostResponse)
+@router.post("")
 def create_post(
     request: CreatePostRequest,
     current_user: CurrentUserDep,
@@ -49,7 +48,7 @@ def create_post(
 class EditPostRequest(BaseModel):
     caption: str
 
-@router.put("/{post_id}", response_model=PostResponse)
+@router.put("/{post_id}")
 def edit_post(
     request: EditPostRequest,
     current_user: CurrentUserDep,
@@ -87,7 +86,7 @@ def edit_post(
         }
     )
 
-@router.get("/{post_id}", response_model=PostResponse)
+@router.get("/{post_id}")
 def get_post_by_id(post_id: int, session: SessionDep):
     post = session.exec(
         select(Post)
@@ -108,7 +107,7 @@ def get_post_by_id(post_id: int, session: SessionDep):
         }
     )
 
-@router.get("", response_model=PostResponse)
+@router.get("")
 def get_posts_from_user_id(
     user_id: int,
     session: SessionDep,

@@ -108,6 +108,36 @@ def get_post_by_id(post_id: int, session: SessionDep):
     )
 
 @router.get("")
+def get_all_posts(
+    session: SessionDep,
+    offset: int = 0,
+    # Less than or equal to 100; default to 100
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    all_posts = session.exec(
+        select(Post)
+        .offset(offset)
+        .limit(limit)
+    ).all()
+
+    if all_posts is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No posts found"
+        )
+    
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content= {
+            "message": f"Successfully found {len(all_posts)} post(s)",
+            "content": [
+                encode_model_to_json(post)
+                for post in all_posts
+            ]
+        }
+    )
+
+@router.get("")
 def get_posts_from_user_id(
     user_id: int,
     session: SessionDep,

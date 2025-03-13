@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
 from typing import Annotated
 from sqlmodel import select, Session
-from ..dependencies import get_session, get_user_from_cookie, encode_model_to_json
 from pydantic import BaseModel
-from ..database import Post
 from datetime import datetime, timezone 
+from ..database import Post
+from ..dependencies import (
+    get_session, get_user_from_cookie, encode_model_to_json
+)
 
 router = APIRouter(
     prefix="/posts",
@@ -16,20 +17,11 @@ router = APIRouter(
 SessionDep = Annotated[Session, Depends(get_session)]
 CurrentUserDep = Annotated[Session, Depends(get_user_from_cookie)]
 
-class PostResponse(BaseModel):
-    id: int
-    post_iamge_url: str
-    caption: str | None = None
-    created_at: datetime
-    edited_at: datetime | None = None
-    user_id: int
-
-
 class CreatePostRequest(BaseModel):
     post_image_url: str
     caption: str | None = None
 
-@router.post("", response_model=PostResponse)
+@router.post("")
 def create_post(
     request: CreatePostRequest,
     current_user: CurrentUserDep,
@@ -56,7 +48,7 @@ def create_post(
 class EditPostRequest(BaseModel):
     caption: str
 
-@router.put("/{post_id}", response_model=PostResponse)
+@router.put("/{post_id}")
 def edit_post(
     request: EditPostRequest,
     current_user: CurrentUserDep,
@@ -94,7 +86,7 @@ def edit_post(
         }
     )
 
-@router.get("/{post_id}", response_model=PostResponse)
+@router.get("/{post_id}")
 def get_post_by_id(post_id: int, session: SessionDep):
     post = session.exec(
         select(Post)
@@ -115,7 +107,37 @@ def get_post_by_id(post_id: int, session: SessionDep):
         }
     )
 
-@router.get("", response_model=PostResponse)
+@router.get("")
+def get_all_posts(
+    session: SessionDep,
+    offset: int = 0,
+    # Less than or equal to 100; default to 100
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    all_posts = session.exec(
+        select(Post)
+        .offset(offset)
+        .limit(limit)
+    ).all()
+
+    if all_posts is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No posts found"
+        )
+    
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content= {
+            "message": f"Successfully found {len(all_posts)} post(s)",
+            "content": [
+                encode_model_to_json(post)
+                for post in all_posts
+            ]
+        }
+    )
+
+@router.get("")
 def get_posts_from_user_id(
     user_id: int,
     session: SessionDep,

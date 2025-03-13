@@ -124,3 +124,14 @@ def get_user_from_cookie(
         ) from e
 
     return user
+
+def get_current_user_is_admin(
+    current_user: Annotated[User, Depends(get_user_from_cookie)]
+):
+    if current_user.is_admin:
+        return current_user 
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Access denied: Admin privileges required"
+        )

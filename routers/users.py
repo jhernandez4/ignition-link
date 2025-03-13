@@ -2,14 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select, Session
-from ..database import User
-from ..dependencies import (
-    get_session, verify_firebase_session_cookie,
-    check_username_exists, get_user_from_cookie,
-)
 from typing import Annotated
 from sqlmodel import Session
 from pydantic import BaseModel
+from ..database import User
+from ..models import UserResponse
+from ..dependencies import (
+    get_session, check_username_exists, get_user_from_cookie
+)
 
 router = APIRouter(
     prefix="/users",
@@ -21,19 +21,14 @@ SessionDep = Annotated[Session, Depends(get_session)]
 CurrentUserDep = Annotated[Session, Depends(get_user_from_cookie)]
 
 @router.get("/me")
-def read_user_me(current_user: CurrentUserDep, session: SessionDep):
+def read_user_me(current_user: CurrentUserDep):
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={
             "message": "Current user found",
-            "data": {
-                "id": current_user.id,
-                "username": current_user.username,
-                "bio": current_user.bio,
-                "is_admin": current_user.is_admin,
-                "profile_pic_url": current_user.profile_pic_url
-            }
+            # Filter out data with UserReponse model
+            "data": UserResponse.model_validate(current_user).model_dump()
         }
     )
 
@@ -74,13 +69,7 @@ def edit_user_me(
             status_code=status.HTTP_200_OK,
             content={
                 "message": "Current user profile updated successfully",
-                "data": {
-                    "id": current_user.id,
-                    "username": current_user.username,
-                    "bio": current_user.bio,
-                    "is_admin": current_user.is_admin,
-                    "profile_pic_url": current_user.profile_pic_url
-                }
+                "data": UserResponse.model_validate(current_user).model_dump()
             }
         )
     except Exception as e:
@@ -117,12 +106,7 @@ def get_users_by_username(
             content={
                 "message": f"Found {len(users)} user(s) matching '{username}'",
                 "data": [
-                    {
-                        "id": user.id,
-                        "username": user.username,
-                        "bio": user.bio,
-                        "profile_pic_url": user.profile_pic_url
-                    }
+                    UserResponse.model_validate(user).model_dump()
                     for user in users
                 ]
             }
@@ -157,12 +141,7 @@ def read_user_by_id(user_id: int, session: SessionDep):
         status_code=status.HTTP_200_OK,
         content={
             "message": f"User with ID '{user_id}' found",
-            "data": {
-                "id": user.id,
-                "username": user.username,
-                "bio": user.bio,
-                "profile_pic_url": user.profile_pic_url
-            }
+            "data": UserResponse.model_validate(user).model_dump()
         }
     )
 
@@ -172,7 +151,7 @@ def read_user_by_username(username: str, session: SessionDep):
         user = session.exec(
             select(User).where(User.username == username)
         ).first()
-        
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -188,11 +167,6 @@ def read_user_by_username(username: str, session: SessionDep):
         status_code=status.HTTP_200_OK,
         content={
             "message": f"User with username '{username}' found",
-            "data": {
-                "id": user.id,
-                "username": user.username,
-                "bio": user.bio,
-                "profile_pic_url": user.profile_pic_url
-            }
+            "data": UserResponse.model_validate(user).model_dump()
         }
     )

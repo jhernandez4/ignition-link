@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from typing import Annotated
 from sqlmodel import select, Session
+from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from datetime import datetime, timezone 
-from ..database import Post
+from ..database import Post, User
+from ..models import UserResponse
 from ..dependencies import (
     get_session, get_user_from_cookie, encode_model_to_json
 )
@@ -115,12 +117,15 @@ def get_all_posts(
     limit: Annotated[int, Query(le=100)] = 100,
 ):
     all_posts = session.exec(
-        select(Post)
+        select(Post, User)
+        .where(Post.user_id == User.id)
+        .order_by(Post.created_at.desc())
         .offset(offset)
         .limit(limit)
+        .options(selectinload(Post.user))
     ).all()
 
-    if all_posts is None:
+    if not all_posts:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No posts found"
@@ -131,8 +136,15 @@ def get_all_posts(
         content= {
             "message": f"Successfully found {len(all_posts)} post(s)",
             "content": [
-                encode_model_to_json(post)
-                for post in all_posts
+                {
+                    "id": post.id,
+                    "post_image_url": post.post_image_url,
+                    "caption": post.caption,
+                    "created_at": post.created_at.isoformat(),
+                    "edited_at": post.edited_at.isoformat() if post.edited_at else None,
+                    "user": encode_model_to_json(UserResponse.model_validate(user))
+                }
+                for post, user in all_posts
             ]
         }
     )
@@ -152,7 +164,7 @@ def get_posts_from_user_id(
         .limit(limit)
     ).all()
 
-    if posts_from_user is None:
+    if not posts_from_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No posts found from user with ID {user_id}"

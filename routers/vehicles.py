@@ -34,3 +34,20 @@ def get_years_for_available_cars(session: SessionDep):
         )
 
     return years
+
+@router.get("/makes/{year}", response_model=list[str])
+def get_makes_from_year(year: int, session: SessionDep):
+    makes = session.exec(
+        select(Vehicle.make)
+        .where(Vehicle.year == year)
+        .order_by(Vehicle.make.asc())
+        .distinct()
+    ).all()
+
+    if not makes:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to find makes for the year {year}"
+        )
+
+    return makes

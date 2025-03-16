@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import create_db_and_tables, convert_csv_to_db, convert_parts_to_db, add_part_to_build
-from .routers import auth, validation, users
+from .database import create_db_and_tables, convert_csv_to_db
+from .routers import auth, validation, users, posts, admin
 import firebase_admin
 from firebase_admin import credentials
 from dotenv import load_dotenv
@@ -12,7 +12,9 @@ app = FastAPI()
 origins = [
     "http://localhost",
     "http://localhost:5173",
-    "https://ignitionlink-frontend.vercel.app"
+    "https://ignitionlink-frontend.vercel.app",
+    "https://ignition-link-backup.netlify.app",
+    "https://ignitionlink.netlify.app"
 ]
 
 app.add_middleware(
@@ -26,6 +28,8 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(validation.router)
 app.include_router(users.router)
+app.include_router(posts.router)
+app.include_router(admin.router)
 
 @app.on_event("startup")
 def on_startup():

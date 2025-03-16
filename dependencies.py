@@ -1,10 +1,12 @@
 from fastapi import Depends, HTTPException, status, Cookie
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.encoders import jsonable_encoder
 from .database import User, engine
 from sqlmodel import select, Session
 from sqlalchemy.exc import SQLAlchemyError
 from firebase_admin import auth, exceptions
 from typing import Annotated
+from pydantic import BaseModel
 
 # Create a database session
 def get_session():
@@ -17,6 +19,10 @@ def check_username_exists(username_to_validate, session):
     ).first()
 
     return bool(existing_user) 
+
+# Used to return Pydantic model in JSONResponse
+def encode_model_to_json(model: BaseModel):
+    return jsonable_encoder(model.model_dump())
 
 # OAuth2PasswordBearer will fetch the token from the "Authorization" header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -101,26 +107,6 @@ def get_user_from_uid(firebase_uid, session):
             detail="An error occurred while querying the database."
         ) from e
 
-def get_user_from_id(user_id, session):
-    try:
-        user = session.exec(
-            select(User).where(User.id == user_id)
-        ).first()
-
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {user_id} does not exist"
-            )
-
-        return user
-    except SQLAlchemyError as e:
-        # Log the error here if needed
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while querying the database."
-        ) from e
-
 def get_user_from_cookie(
     decoded_claims: Annotated[dict, Depends(verify_firebase_session_cookie)],
     session: Annotated[Session, Depends(get_session)]
@@ -138,3 +124,14 @@ def get_user_from_cookie(
         ) from e
 
     return user
+
+def get_current_user_is_admin(
+    current_user: Annotated[User, Depends(get_user_from_cookie)]
+):
+    if current_user.is_admin:
+        return current_user 
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Access denied: Admin privileges required"
+        )

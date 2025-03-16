@@ -23,6 +23,7 @@ class User(SQLModel, table=True):
     profile_pic_url: str = Field(default="https://i.imgur.com/L5AoglL.png")
 
     posts: list["Post"] = Relationship(back_populates="user")
+    builds: list["Build"] = Relationship(back_populates="owner")
 
 class Post(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -35,8 +36,6 @@ class Post(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id")
     user: User = Relationship(back_populates="posts")
 
-    builds: list["Build"] = Relationship(back_populates="owner")
-
 class Vehicle(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     make: str
@@ -45,21 +44,24 @@ class Vehicle(SQLModel, table=True):
     
     builds: list["Build"] = Relationship(back_populates="vehicle")
 
+# Create many-to-many relationship between Parts and Builds tables
+class BuildPartLink(SQLModel, table=True):
+    build_id: int = Field(default=None, foreign_key="build.id", primary_key=True)
+    part_id: int = Field(default=None, foreign_key="part.id", primary_key=True)
 
 class Build(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    vehicle_id: int = Field(foreign_key="vehicles.id")
+    vehicle_id: int = Field(foreign_key="vehicle.id")
     nickname: str | None = Field(default=None)
     cover_picture_url: str | None = Field(
         default="https://cdn2.iconfinder.com/data/icons/solidix-cars/128/cars_vehicle_motor_front-14-512.png"
     )
     description: str | None = Field(default="")
     
-
     owner: User = Relationship(back_populates="builds")
     vehicle: Vehicle = Relationship(back_populates="builds")
-    parts: list["Part"] = Relationship(back_populates="builds", link_model="BuildPartLink")
+    parts: list["Part"] = Relationship(back_populates="builds", link_model=BuildPartLink)
 
 class Part(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -67,13 +69,9 @@ class Part(SQLModel, table=True):
     brand: str
     part_name: str
 
-    builds: list["Build"] = Relationship(back_populates="parts", link_model="BuildPartLink")
+    builds: list["Build"] = Relationship(back_populates="parts", link_model=BuildPartLink)
 
 
-# Create many-to-many relationship between Parts and Builds tables
-class BuildPartLink(SQLModel, table=True):
-    build_id: int = Field(default=None, foreign_key="build.id", primary_key=True)
-    part_id: int = Field(default=None, foreign_key="part.id", primary_key=True)
 
     # exhaust: Optional[str] = None
     # wheels: Optional[str] = None

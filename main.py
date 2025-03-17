@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import create_db_and_tables, convert_csv_to_db
-from .routers import auth, validation, users, posts, admin
+from .routers import (
+    auth, validation, users, posts, admin, vehicles, builds
+)
 import firebase_admin
 from firebase_admin import credentials
 from dotenv import load_dotenv
@@ -30,6 +32,8 @@ app.include_router(validation.router)
 app.include_router(users.router)
 app.include_router(posts.router)
 app.include_router(admin.router)
+app.include_router(vehicles.router)
+app.include_router(builds.router)
 
 @app.on_event("startup")
 def on_startup():
@@ -39,6 +43,8 @@ def on_startup():
 
     create_db_and_tables()
     convert_csv_to_db(VEHICLES_CSV_PATH)
+    # convert_parts_to_db("parts.csv")
+    # add_part_to_build()
 
     # Initialize Firebase
     firebase_key_path = os.getenv("FIREBASE_KEY_PATH")

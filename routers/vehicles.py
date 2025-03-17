@@ -51,3 +51,18 @@ def get_makes_from_year(year: int, session: SessionDep):
         )
 
     return makes
+
+@router.get("/models", response_model=list[str])
+def get_models_from_year_and_make(year: int, make: str, session: SessionDep):
+    models = session.exec(
+        select(Vehicle.model)
+        .where(Vehicle.year == year, Vehicle.make == make)
+    ).all()
+
+    if not models:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to find find models for the year {year} and make {make}"
+        )
+
+    return models

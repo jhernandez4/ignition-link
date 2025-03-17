@@ -17,7 +17,7 @@ router = APIRouter(
 )
 
 SessionDep = Annotated[Session, Depends(get_session)]
-CurrentUserDep = Annotated[Session, Depends(get_user_from_cookie)]
+CurrentUserDep = Annotated[User, Depends(get_user_from_cookie)]
 
 class CreatePostRequest(BaseModel):
     post_image_url: str

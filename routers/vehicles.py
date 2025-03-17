@@ -1,14 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Annotated
 from sqlmodel import select, Session
-from sqlalchemy.orm import selectinload
-from pydantic import BaseModel
-from datetime import datetime, timezone 
-from ..database import Post, User, Vehicle
-from ..models import UserResponse
+from ..database import Vehicle
 from ..dependencies import (
-    get_session, get_user_from_cookie, encode_model_to_json
+    get_session
 )
 
 router = APIRouter(
@@ -17,7 +12,6 @@ router = APIRouter(
 )
 
 SessionDep = Annotated[Session, Depends(get_session)]
-CurrentUserDep = Annotated[Session, Depends(get_user_from_cookie)]
 
 @router.get("/years", response_model=list[int])
 def get_years_for_available_cars(session: SessionDep):

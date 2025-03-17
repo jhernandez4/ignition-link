@@ -18,7 +18,7 @@ router = APIRouter(
 )
 
 SessionDep = Annotated[Session, Depends(get_session)]
-CurrentUserDep = Annotated[Session, Depends(get_user_from_cookie)]
+CurrentUserDep = Annotated[User, Depends(get_user_from_cookie)]
 
 @router.get("/me")
 def read_user_me(current_user: CurrentUserDep):

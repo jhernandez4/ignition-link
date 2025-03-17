@@ -29,7 +29,7 @@ class VehicleResponse(BaseModel):
     year: int
 
     class Config:
-        orm_mode = True  # This allows the Pydantic model to work with SQLAlchemy models
+        from_attributes = True  # This allows the Pydantic model to work with SQLAlchemy models
 
 class BuildResponse(BaseModel):
     id: int
@@ -41,4 +41,4 @@ class BuildResponse(BaseModel):
     vehicle: VehicleResponse
 
     class Config:
-        orm_mode = True
+        from_attributes = True

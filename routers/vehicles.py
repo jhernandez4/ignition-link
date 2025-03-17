@@ -52,10 +52,10 @@ def get_makes_from_year(year: int, session: SessionDep):
 
     return makes
 
-@router.get("/models", response_model=list[str])
+@router.get("/models", response_model=list[Vehicle])
 def get_models_from_year_and_make(year: int, make: str, session: SessionDep):
     models = session.exec(
-        select(Vehicle.model)
+        select(Vehicle)
         .where(Vehicle.year == year, Vehicle.make == make)
     ).all()
 

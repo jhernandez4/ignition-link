@@ -1,6 +1,8 @@
 from sqlmodel import (
-    Field, Session, SQLModel, create_engine, select, Relationship
+    Field, Session, SQLModel, create_engine, select, Relationship,
+    UniqueConstraint
 )
+from sqlalchemy.exc import IntegrityError
 import os
 import csv
 from dotenv import load_dotenv
@@ -38,11 +40,15 @@ class Post(SQLModel, table=True):
 
 class Vehicle(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    make: str
-    model: str
-    year: int
-    
+    make: str = Field(default=None, index=True)
+    model: str = Field(default=None, index=True)
+    year: int = Field(default=None, index=True)
+
     builds: list["Build"] = Relationship(back_populates="vehicle")
+
+    __table_args__ = (
+        UniqueConstraint('year', 'make', 'model', name='uix_year_make_model'),
+    )
 
 # Create many-to-many relationship between Parts and Builds tables
 class BuildPartLink(SQLModel, table=True):
@@ -70,8 +76,6 @@ class Part(SQLModel, table=True):
     part_name: str
 
     builds: list["Build"] = Relationship(back_populates="parts", link_model=BuildPartLink)
-
-
 
     # exhaust: Optional[str] = None
     # wheels: Optional[str] = None
@@ -149,25 +153,28 @@ def convert_csv_to_db(filename: str):
     with file_content as file:
         cars = csv.DictReader(file)
         with Session(engine) as session:
-            try:
-                for row in cars:
-                    if len(row) < 3:  # Ensure row has all required fields
-                        print(f"Skipping malformed row: {row}")
-                        continue
-                    
+            for row in cars:
+                if len(row) < 3:  # Ensure row has all required fields
+                    print(f"Skipping malformed row: {row}")
+                    continue
+                
+                try:
+                    # Create the Vehicle object
+                    vehicle = Vehicle(make=str(row['make']), model=str(row['model']), year=int(row['year']))
+                    session.add(vehicle)
+                    print(f"Adding vehicle to db: {vehicle}")
+
+                    # Try to commit the individual vehicle, handle integrity violation
                     try:
-                        vehicle = Vehicle(make=str(row['make']), model=str(row['model']), year=int(row['year']))
-                        session.add(vehicle)
-                        print(f"Adding vehicle to db: {vehicle}")
-                    except ValueError as e:
-                        print(f"Skipping Incorrect Row: {row}, Error: {e}")
-                session.commit()
-                print("Commit Successful!")
-            except Exception as e:
-                session.rollback()
-                print(f"Error occurred: {e}")
-            finally:
-                session.close()
+                        session.commit()
+                        print(f"Vehicle committed: {vehicle}")
+                    except IntegrityError as e:
+                        session.rollback()  # Rollback only for this specific row
+                        print(f"IntegrityError occurred for {vehicle}: {e.orig} - Skipping this row.")
+                except ValueError as e:
+                    print(f"Skipping Incorrect Row: {row}, Error: {e}")
+
+            print("CSV import complete.")
 
 # def add_part_to_build(build_id: int, part_id: int):
 #     with Session(engine) as session:

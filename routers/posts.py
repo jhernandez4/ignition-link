@@ -58,6 +58,7 @@ def get_posts_from_user_id(
     posts_from_user = session.exec(
         select(Post)
         .where(Post.user_id == user_id)
+        .order_by(Post.created_at.desc())
         .offset(offset)
         .limit(limit)
     ).all()

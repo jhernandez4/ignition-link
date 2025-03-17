@@ -63,10 +63,10 @@ def get_posts_from_user_id(
         .limit(limit)
     ).all()
 
-    if not posts_from_user:
+    if posts_from_user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No posts found from user with ID {user_id}"
+            detail=f"Posts list for user is null"
         )
 
     return JSONResponse(
@@ -92,10 +92,10 @@ def get_all_posts(
         .limit(limit)
     ).all()
 
-    if not all_posts:
+    if all_posts is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No posts found"
+            detail="Posts list for user is null"
         )
     
     return all_posts

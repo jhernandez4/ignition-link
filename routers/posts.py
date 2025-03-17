@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from datetime import datetime, timezone 
 from ..database import Post, User
-from ..models import UserResponse
+from ..models import UserResponse, PostResponse
 from ..dependencies import (
     get_session, get_user_from_cookie, encode_model_to_json
 )
@@ -46,6 +46,58 @@ def create_post(
             "post": encode_model_to_json(new_post) 
         }
     )
+
+@router.get("")
+def get_posts_from_user_id(
+    user_id: int,
+    session: SessionDep,
+    offset: int = 0,
+    # Less than or equal to 100; default to 100
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    posts_from_user = session.exec(
+        select(Post)
+        .where(Post.user_id == user_id)
+        .offset(offset)
+        .limit(limit)
+    ).all()
+
+    if not posts_from_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No posts found from user with ID {user_id}"
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": f"Successfully retrieved {len(posts_from_user)} post(s) from user with ID {user_id}",
+            "posts": [encode_model_to_json(post) for post in posts_from_user] 
+        }
+    )
+
+@router.get("/all", response_model=list[PostResponse])
+def get_all_posts(
+    session: SessionDep,
+    offset: int = 0,
+    # Less than or equal to 100; default to 100
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    all_posts = session.exec(
+        select(Post)
+        .where(Post.user_id == User.id)
+        .order_by(Post.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    ).all()
+
+    if not all_posts:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No posts found"
+        )
+    
+    return all_posts
 
 class EditPostRequest(BaseModel):
     caption: str
@@ -106,74 +158,5 @@ def get_post_by_id(post_id: int, session: SessionDep):
         content={
             "message": "Post retrieved successfully!",
             "post": encode_model_to_json(post)
-        }
-    )
-
-@router.get("")
-def get_all_posts(
-    session: SessionDep,
-    offset: int = 0,
-    # Less than or equal to 100; default to 100
-    limit: Annotated[int, Query(le=100)] = 100,
-):
-    all_posts = session.exec(
-        select(Post, User)
-        .where(Post.user_id == User.id)
-        .order_by(Post.created_at.desc())
-        .offset(offset)
-        .limit(limit)
-        .options(selectinload(Post.user))
-    ).all()
-
-    if not all_posts:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No posts found"
-        )
-    
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content= {
-            "message": f"Successfully found {len(all_posts)} post(s)",
-            "content": [
-                {
-                    "id": post.id,
-                    "post_image_url": post.post_image_url,
-                    "caption": post.caption,
-                    "created_at": post.created_at.isoformat(),
-                    "edited_at": post.edited_at.isoformat() if post.edited_at else None,
-                    "user": encode_model_to_json(UserResponse.model_validate(user))
-                }
-                for post, user in all_posts
-            ]
-        }
-    )
-
-@router.get("")
-def get_posts_from_user_id(
-    user_id: int,
-    session: SessionDep,
-    offset: int = 0,
-    # Less than or equal to 100; default to 100
-    limit: Annotated[int, Query(le=100)] = 100,
-):
-    posts_from_user = session.exec(
-        select(Post)
-        .where(Post.user_id == user_id)
-        .offset(offset)
-        .limit(limit)
-    ).all()
-
-    if not posts_from_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No posts found from user with ID {user_id}"
-        )
-
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={
-            "message": f"Successfully retrieved {len(posts_from_user)} post(s) from user with ID {user_id}",
-            "posts": [encode_model_to_json(post) for post in posts_from_user] 
         }
     )

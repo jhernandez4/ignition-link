@@ -12,6 +12,16 @@ class UserResponse(BaseModel):
         # Enable support for ORM mode
         from_attributes = True
 
+class PostResponse(BaseModel):
+    id: int
+    user_id: int
+    post_image_url: str
+    caption: str | None
+    created_at: datetime
+    edited_at: datetime | None
+
+    user: UserResponse
+
 class VehicleResponse(BaseModel):
     id: int
     make: str

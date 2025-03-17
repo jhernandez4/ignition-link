@@ -28,7 +28,7 @@ def read_user_me(current_user: CurrentUserDep):
         content={
             "message": "Current user found",
             # Filter out data with UserReponse model
-            "data": UserResponse.model_validate(current_user).model_dump()
+            "user": UserResponse.model_validate(current_user).model_dump()
         }
     )
 
@@ -69,7 +69,7 @@ def edit_user_me(
             status_code=status.HTTP_200_OK,
             content={
                 "message": "Current user profile updated successfully",
-                "data": UserResponse.model_validate(current_user).model_dump()
+                "user": UserResponse.model_validate(current_user).model_dump()
             }
         )
     except Exception as e:
@@ -105,7 +105,7 @@ def get_users_by_username(
             status_code=status.HTTP_200_OK,
             content={
                 "message": f"Found {len(users)} user(s) matching '{username}'",
-                "data": [
+                "users": [
                     UserResponse.model_validate(user).model_dump()
                     for user in users
                 ]
@@ -141,7 +141,7 @@ def read_user_by_id(user_id: int, session: SessionDep):
         status_code=status.HTTP_200_OK,
         content={
             "message": f"User with ID '{user_id}' found",
-            "data": UserResponse.model_validate(user).model_dump()
+            "user": UserResponse.model_validate(user).model_dump()
         }
     )
 
@@ -167,6 +167,6 @@ def read_user_by_username(username: str, session: SessionDep):
         status_code=status.HTTP_200_OK,
         content={
             "message": f"User with username '{username}' found",
-            "data": UserResponse.model_validate(user).model_dump()
+            "user": UserResponse.model_validate(user).model_dump()
         }
     )

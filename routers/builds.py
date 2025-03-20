@@ -22,7 +22,7 @@ CurrentUserDep = Annotated[User, Depends(get_user_from_cookie)]
 class CreateBuildRequest(BaseModel):
     vehicle_id: int
 
-@router.post("/", response_model=BuildResponse)
+@router.post("", response_model=BuildResponse)
 def create_build(
     request: CreateBuildRequest,
     current_user: CurrentUserDep,

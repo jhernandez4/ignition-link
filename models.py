@@ -37,7 +37,7 @@ class BuildResponse(BaseModel):
     vehicle_id: int 
     nickname: str | None 
     cover_picture_url: str
-    description: str 
+    description: str | None
 
     vehicle: VehicleResponse
     owner: UserResponse

@@ -38,7 +38,6 @@ class BuildResponse(BaseModel):
     nickname: str | None 
     cover_picture_url: str
     description: str 
-    vehicle: VehicleResponse
 
-    class Config:
-        from_attributes = True
+    vehicle: VehicleResponse
+    owner: UserResponse

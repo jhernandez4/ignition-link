@@ -47,6 +47,12 @@ def get_build_from_build_id(
     build = session.exec(
         select(Build)
         .where(Build.id == build_id)
-    ).one()
+    ).first()
+
+    if not build: 
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to retrieve build. Build with id {build_id} does not exist."
+        )
 
     return build

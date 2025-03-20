@@ -63,7 +63,7 @@ class Build(SQLModel, table=True):
     cover_picture_url: str | None = Field(
         default="https://cdn2.iconfinder.com/data/icons/solidix-cars/128/cars_vehicle_motor_front-14-512.png"
     )
-    description: str | None = Field(default="")
+    description: str | None = Field(default=None)
     
     owner: User = Relationship(back_populates="builds")
     vehicle: Vehicle = Relationship(back_populates="builds")

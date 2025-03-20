@@ -56,3 +56,27 @@ def get_build_from_build_id(
         )
 
     return build
+
+@router.get("", response_model=list[BuildResponse])
+def get_builds_from_user_id(
+    user_id: int,
+    session: SessionDep,
+    offset: int = 0,
+    # Less than or equal to 100; default to 100
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    builds_from_user_id = session.exec(
+        select(Build)
+        .where(Build.user_id == user_id)
+        .order_by(Build.id.asc())
+        .offset(offset)
+        .limit(limit)
+    ).all()
+    
+    if builds_from_user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Failed to retrieve builds. List of builds is null"
+        )
+    
+    return builds_from_user_id

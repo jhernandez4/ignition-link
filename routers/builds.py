@@ -38,3 +38,15 @@ def create_build(
     session.refresh(new_build)
 
     return new_build 
+
+@router.get("/{build_id}", response_model=BuildResponse)
+def get_build_from_build_id(
+    build_id: int,
+    session: SessionDep
+):
+    build = session.exec(
+        select(Build)
+        .where(Build.id == build_id)
+    ).one()
+
+    return build

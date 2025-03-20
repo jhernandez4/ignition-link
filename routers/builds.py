@@ -39,6 +39,47 @@ def create_build(
 
     return new_build 
 
+class EditBuildInfoRequest(BaseModel):
+    nickname: str | None = None
+    cover_picture_url: str | None = None
+    description: str | None = None
+
+@router.patch("/{build_id}", response_model=BuildResponse)
+def edit_build_info(
+    build_id: int,
+    request: EditBuildInfoRequest,
+    current_user: CurrentUserDep,
+    session: SessionDep
+):
+    build_to_edit = session.exec(
+        select(Build)
+        .where(Build.id == build_id)
+    ).first()
+
+    if not build_to_edit:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to retrieve build. Build with id {build_id} does not exist."
+        )
+    
+    if build_to_edit.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Failed to edit build. You do not have permission to edit this build"
+        )
+    
+    # exclude_unset excludes values that were not sent by the client 
+    build_data = request.model_dump(exclude_unset=True)
+
+    # update build object with new edit data
+    build_to_edit.sqlmodel_update(build_data)
+
+    session.add(build_to_edit)
+    session.commit()
+    session.refresh(build_to_edit)
+
+    return build_to_edit
+
 @router.get("/{build_id}", response_model=BuildResponse)
 def get_build_from_build_id(
     build_id: int,

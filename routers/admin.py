@@ -165,10 +165,3 @@ def get_all_users(
             ]
         }
     )
-
-@router.post("/add-part")
-def add_part_to_database(
-    current_admin: CurrentUserAdminDep,
-    session: SessionDep
-):
-    pass

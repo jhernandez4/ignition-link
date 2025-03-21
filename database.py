@@ -71,31 +71,27 @@ class Build(SQLModel, table=True):
 
 class PartType(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    type: str = Field()
+    type: str 
 
     parts: list["Part"] = Relationship(back_populates="part_type")
 
+class Brand(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+
+    parts: list["Part"] = Relationship(back_populates="brand")
+
 class Part(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    brand: str
+    brand_id: int = Field(foreign_key="brand.id")
     part_name: str
     part_number: str
     type_id: int = Field(foreign_key="parttype.id")
+    image_url: str | None = Field(default=None)
 
+    brand: Brand = Relationship(back_populates="parts")
     builds: list["Build"] = Relationship(back_populates="parts", link_model=BuildPartLink)
     part_type: PartType = Relationship(back_populates="parts")
-
-    # exhaust: Optional[str] = None
-    # wheels: Optional[str] = None
-    # suspension: Optional[str] = None
-    # intake: Optional[str] = None
-    # forced_injection: Optional[str] = None
-    # interior_cosmetics: Optional[str] = None
-    # exterior_cosmetics: Optional[str] = None
-    # fueling: Optional[str] = None
-    # brakes: Optional[str] = None
-    # tune: Optional[str] = None
-    # body: Optional[str] = None
 
 PSQL_URI = os.getenv("PSQL_URI")
 
@@ -107,38 +103,6 @@ engine = create_engine(PSQL_URI)
 # Create the models for all models defined above
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
-
-# def convert_parts_to_db(filename: str):
-#     with Session(engine) as session:
-#         # Check if the Parts table has any records
-#         existing_parts = session.exec(select(Part)).first()
-#         if existing_parts:
-#             print("Parts database already populated. Skipping CSV import.")
-#             return  
-
-#     print("Parts database is empty. Populating from CSV...")
-
-#     with open(filename, newline="", encoding="utf-8") as file:
-#         parts = csv.DictReader(file)
-#         with Session(engine) as session:
-#             try:
-#                 for row in parts:
-#                     if len(row) < 4:  # Ensure row has all required fields
-#                         print(f"Skipping malformed row: {row}")
-#                         continue
-                    
-#                     try:
-#                         parts = Part(car=str(row['car']), type=str(row['type']), brand=str(row['brand']), model=str(row['model']))
-#                         session.add(parts)
-#                     except ValueError as e:
-#                         print(f"Skipping Incorrect Row: {row}, Error: {e}")
-#                 session.commit()
-#                 print("Commit Successful!")
-#             except Exception as e:
-#                 session.rollback()
-#                 print(f"Error occurred: {e}")
-#             finally:
-#                 session.close()
 
 def convert_csv_to_db(filename: str):
     with Session(engine) as session:
@@ -211,35 +175,6 @@ def populate_part_types():
                 print(f"Part type {new_type} has been added")
         else:
             print("Part types table is already populated. Skipping type inserts")
-
-# def add_part_to_build(build_id: int, part_id: int):
-#     with Session(engine) as session:
-#         parts = session.exec(select(Part)).all()
-
-#     if not parts:
-#         return "No Parts Found"
-    
-#     print ("Available Parts: ")
-#     for part in parts:
-#         print(f"{part.id}) {part.type}: {part.brand} {part.model}")
-
-#     # Check if build and part exist
-#     build = session.exec(select(Build).where(Build.id == build_id)).first()
-#     part = session.exec(select(Part).where(Part.id == part_id)).first()
-
-#     if not build or not part:
-#         return "No Build or Part found!"
-    
-#     existing_link = session.exec(select(BuildPartLink).where(BuildPartLink.build_id == build_id, BuildPartLink.part_id == part_id))
-
-#     if existing_link:
-#         return "Part is already added to the Build"
-    
-#     link = BuildPartLink(build_id=build_id, part_id=part_id)
-#     session.add(link)
-#     session.commit()
-
-#     return f"Added {part.brand} {part.model} to Build {build.id}"
 
 def get_db():
     with Session(engine) as session:

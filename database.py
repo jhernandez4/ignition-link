@@ -38,6 +38,10 @@ class Post(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id")
     user: User = Relationship(back_populates="posts")
 
+class PartCompatibility(SQLModel, table=True):
+    part_id: int = Field(foreign_key="part.id", primary_key=True)
+    vehicle_id: int = Field(foreign_key="vehicle.id", primary_key=True)
+
 class Vehicle(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     make: str = Field(default=None, index=True)
@@ -45,6 +49,7 @@ class Vehicle(SQLModel, table=True):
     year: int = Field(default=None, index=True)
 
     builds: list["Build"] = Relationship(back_populates="vehicle")
+    compat_parts: list["Part"] = Relationship(back_populates="compat_vehicles", link_model=PartCompatibility)
 
     __table_args__ = (
         UniqueConstraint('year', 'make', 'model', name='uix_year_make_model'),
@@ -71,7 +76,7 @@ class Build(SQLModel, table=True):
 
 class PartType(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    type: str = Field()
+    type: str 
 
     parts: list["Part"] = Relationship(back_populates="part_type")
 
@@ -84,6 +89,7 @@ class Part(SQLModel, table=True):
 
     builds: list["Build"] = Relationship(back_populates="parts", link_model=BuildPartLink)
     part_type: PartType = Relationship(back_populates="parts")
+    compat_vehicles: list["Vehicle"] = Relationship(back_populates="compat_parts", link_model=PartCompatibility)
 
     # exhaust: Optional[str] = None
     # wheels: Optional[str] = None

@@ -78,6 +78,7 @@ class PartType(SQLModel, table=True):
 class Brand(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True, unique=True)
+    is_verified: bool = Field(default=False)
 
     parts: list["Part"] = Relationship(back_populates="brand")
 

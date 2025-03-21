@@ -69,13 +69,21 @@ class Build(SQLModel, table=True):
     vehicle: Vehicle = Relationship(back_populates="builds")
     parts: list["Part"] = Relationship(back_populates="builds", link_model=BuildPartLink)
 
+class PartType(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    type: str = Field()
+
+    parts: list["Part"] = Relationship(back_populates="part_type")
+
 class Part(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    type: str
     brand: str
     part_name: str
+    part_number: str
+    type_id: int = Field(foreign_key="parttype.id")
 
     builds: list["Build"] = Relationship(back_populates="parts", link_model=BuildPartLink)
+    part_type: PartType = Relationship(back_populates="parts")
 
     # exhaust: Optional[str] = None
     # wheels: Optional[str] = None
@@ -175,6 +183,34 @@ def convert_csv_to_db(filename: str):
                     print(f"Skipping Incorrect Row: {row}, Error: {e}")
 
             print("CSV import complete.")
+
+def populate_part_types():
+    types = [
+        "Exhaust",
+        "Wheels",
+        "Suspension",
+        "Intake",
+        "Forced Induction",
+        "Interior Cosmetics",
+        "Exterior Cosmetics",
+        "Fueling",
+        "Brakes",
+        "Tune",
+        "Body"
+    ]
+
+    with Session(engine) as session:
+        db_types = session.exec(select(PartType)).all()
+
+        if not db_types:
+            for type in types:
+                new_type = PartType(type=type) 
+                session.add(new_type)
+                session.commit()
+                session.refresh(new_type)
+                print(f"Part type {new_type} has been added")
+        else:
+            print("Part types table is already populated. Skipping type inserts")
 
 # def add_part_to_build(build_id: int, part_id: int):
 #     with Session(engine) as session:

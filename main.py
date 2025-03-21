@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import create_db_and_tables, convert_csv_to_db
+from .database import create_db_and_tables, convert_csv_to_db, populate_part_types
 from .routers import (
     auth, validation, users, posts, admin, vehicles, builds
 )
@@ -43,6 +43,7 @@ def on_startup():
 
     create_db_and_tables()
     convert_csv_to_db(VEHICLES_CSV_PATH)
+    populate_part_types()
     # convert_parts_to_db("parts.csv")
     # add_part_to_build()
 

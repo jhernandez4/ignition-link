@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import create_db_and_tables, convert_csv_to_db, populate_part_types
+from .database import (
+    create_db_and_tables, convert_csv_to_db, populate_part_types,
+    insert_brands_to_db 
+)
 from .routers import (
     auth, validation, users, posts, admin, vehicles, builds
 )
@@ -41,8 +44,13 @@ def on_startup():
     if not VEHICLES_CSV_PATH:
         raise RuntimeError("VEHICLES_CSV_PATH is not set in the environment variables.")
 
+    BRANDS_TXT_PATH = os.getenv("BRANDS_TXT_PATH")
+    if not BRANDS_TXT_PATH:
+        raise RuntimeError("BRANDS_TXT_PATH is not set in the environment variables")
+
     create_db_and_tables()
     convert_csv_to_db(VEHICLES_CSV_PATH)
+    insert_brands_to_db(BRANDS_TXT_PATH)
     populate_part_types()
     # convert_parts_to_db("parts.csv")
     # add_part_to_build()

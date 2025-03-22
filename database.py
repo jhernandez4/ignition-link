@@ -107,6 +107,32 @@ engine = create_engine(PSQL_URI)
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
+def insert_brands_to_db(filename: str):
+    with Session(engine) as session:
+        existing_brand = session.exec(select(Brand)).first()
+        if existing_brand:
+            print("Brand table already populated. Skipping brand insertions")
+            return
+
+    print("Brand table is empty. Populating from CSV...")
+    if filename.startswith("http"):
+        response = requests.get(filename)
+        response.raise_for_status() 
+        file_content = io.StringIO(response.text)
+    else:
+        file_content = open(filename, newline="r", encoding="utf-8")  # Open local file
+
+    with file_content as file:
+        brands_list = [line.strip() for line in file if line.strip()]
+    
+    with Session(engine) as session:
+        for new_brand in brands_list:
+            new_brand = Brand(name=new_brand)
+            session.add(new_brand)
+            session.commit()
+            session.refresh(new_brand)
+            print(f"{new_brand.name} added to the brand table")
+
 def convert_csv_to_db(filename: str):
     with Session(engine) as session:
         # Check if the Vehicles table has any records
@@ -177,7 +203,7 @@ def populate_part_types():
                 session.refresh(new_type)
                 print(f"Part type {new_type} has been added")
         else:
-            print("Part types table is already populated. Skipping type inserts")
+            print("Part types table is already populated. Skipping type insertions")
 
 def get_db():
     with Session(engine) as session:

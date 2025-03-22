@@ -78,19 +78,18 @@ class PartType(SQLModel, table=True):
 class Brand(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True, unique=True)
-    is_verified: bool = Field(default=False)
 
     parts: list["Part"] = Relationship(back_populates="brand")
 
 class Part(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     brand_id: int = Field(foreign_key="brand.id")
-    submitted_by_id: int | None = Field(foreign_key="user.id")
-    part_name: str
-    part_number: str
+    submitted_by_id: int = Field(foreign_key="user.id")
     type_id: int = Field(foreign_key="parttype.id")
+    part_name: str = Field(index=True)
+    part_number: str | None = Field(default=None)
     image_url: str | None = Field(default=None)
-    is_verified: bool = Field(default=False)
+    is_verified: bool = Field(default=False) # for admin/mods to finalize image, brand, number, etc
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     brand: Brand = Relationship(back_populates="parts")

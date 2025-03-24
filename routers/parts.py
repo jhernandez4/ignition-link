@@ -89,3 +89,36 @@ def create_new_part(
     session.refresh(new_part)
 
     return new_part
+
+@router.delete("/{part_id}")
+def delete_part_by_part_id(
+    part_id: int,
+    current_user: CurrentUserDep,
+    session: SessionDep
+):
+    part_to_delete = session.exec(
+        select(Part)
+        .where(Part.id == part_id)
+    ).first()
+
+    if not part_to_delete:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to delete part. Part with id {part_id} not found"
+        )
+    
+    if part_to_delete.submitted_by_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Failed to delete part. You do not have permission to delete this part"
+        )
+    
+    session.delete(part_to_delete)
+    session.commit()
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": f"Successfully deleted part with id {part_id}"
+        }
+    )

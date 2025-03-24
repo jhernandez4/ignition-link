@@ -26,6 +26,7 @@ class User(SQLModel, table=True):
 
     posts: list["Post"] = Relationship(back_populates="user")
     builds: list["Build"] = Relationship(back_populates="owner")
+    part_submissions: list["Part"] = Relationship(back_populates="submitted_by")
 
 class Post(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -96,6 +97,7 @@ class Part(SQLModel, table=True):
     brand: Brand = Relationship(back_populates="parts")
     builds: list["Build"] = Relationship(back_populates="parts", link_model=BuildPartLink)
     part_type: PartType = Relationship(back_populates="parts")
+    submitted_by: User = Relationship(back_populates="part_submissions")
 
 PSQL_URI = os.getenv("PSQL_URI")
 

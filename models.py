@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime, timezone 
-from .database import User, Post
+from .database import User, Post, Brand, PartType 
 
 class UserResponse(BaseModel):
     id: int
@@ -41,3 +41,19 @@ class BuildResponse(BaseModel):
 
     vehicle: VehicleResponse
     owner: UserResponse
+
+class PartResponse(BaseModel):
+    id: int 
+    brand_id: int
+    type_id: int
+    submitted_by_id: int
+    part_name: str
+    part_number: str 
+    image_url: str
+    is_verified: bool
+    description: str
+    created_at: datetime 
+
+    brand: Brand
+    part_type: PartType
+    submitted_by: UserResponse

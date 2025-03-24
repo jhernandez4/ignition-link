@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from datetime import datetime, timezone 
 from ..database import User, PartType, Part, Brand
-from ..models import BuildResponse
+from ..models import PartResponse 
 from ..dependencies import (
     get_session, get_user_from_cookie, encode_model_to_json
 )
@@ -75,7 +75,7 @@ class CreateNewPartRequest(BaseModel):
     image_url: str | None = None
     description: str | None = None
     
-@router.post("", response_model=Part)
+@router.post("", response_model=PartResponse)
 def create_new_part(
     request: CreateNewPartRequest,
     current_user: CurrentUserDep,

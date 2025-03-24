@@ -6,7 +6,7 @@ from sqlmodel import select, Session
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from datetime import datetime, timezone 
-from ..database import User, PartType, Part
+from ..database import User, PartType, Part, Brand
 from ..models import BuildResponse
 from ..dependencies import (
     get_session, get_user_from_cookie, encode_model_to_json
@@ -33,6 +33,15 @@ def get_part_types(session: SessionDep):
         ) 
 
     return part_types_list
+
+@router.get("/brands", response_model=list[Brand])
+def get_brands_list(session: SessionDep):
+    brands_list = session.exec(
+        select(Brand)
+        .order_by(Brand.name.asc())
+    ).all()
+
+    return brands_list
 
 class CreateNewPartRequest(BaseModel):
     brand_id: int

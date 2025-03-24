@@ -89,6 +89,7 @@ class Part(SQLModel, table=True):
     part_name: str = Field(index=True)
     part_number: str | None = Field(default=None)
     image_url: str | None = Field(default=None)
+    description: str | None = Field(default=None)
     is_verified: bool = Field(default=False) # for admin/mods to finalize image, brand, number, etc
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

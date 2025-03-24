@@ -122,3 +122,18 @@ def delete_part_by_part_id(
             "message": f"Successfully deleted part with id {part_id}"
         }
     )
+
+@router.get("/{part_id}", response_model=PartResponse)
+def get_part_by_part_id(part_id: int, session: SessionDep):
+    part = session.exec(
+        select(Part)
+        .where(Part.id == part_id)
+    ).first()
+
+    if not part:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to get part. Part with id {part_id} not found"
+        )
+
+    return part

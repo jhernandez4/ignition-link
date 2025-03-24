@@ -5,7 +5,7 @@ from .database import (
     insert_brands_to_db 
 )
 from .routers import (
-    auth, validation, users, posts, admin, vehicles, builds
+    auth, validation, users, posts, admin, vehicles, builds, parts
 )
 import firebase_admin
 from firebase_admin import credentials
@@ -37,6 +37,7 @@ app.include_router(posts.router)
 app.include_router(admin.router)
 app.include_router(vehicles.router)
 app.include_router(builds.router)
+app.include_router(parts.router)
 
 @app.on_event("startup")
 def on_startup():

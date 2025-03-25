@@ -176,6 +176,53 @@ def convert_csv_to_db(filename: str):
 
             print("CSV import complete.")
 
+def import_unique_vehicles_from_csv(filename: str):
+    with Session(engine) as session:
+        # Check if the Vehicles table has any records
+        existing_vehicle = session.exec(select(Vehicle)).first()
+        if existing_vehicle:
+            print("Vehicles database already populated. Skipping CSV import.")
+            return  
+
+    print("Vehicles database is empty. Populating from CSV...")
+
+    if filename.startswith("http"):  # Check if it's a URL
+        response = requests.get(filename)
+        response.raise_for_status() 
+        file_content = io.StringIO(response.text)
+
+    else:
+        file_content = open(filename, newline="", encoding="utf-8")  # Open local file
+
+    with file_content as file:
+        cars = csv.DictReader(file)
+        cars_count = 0
+        with Session(engine) as session:
+            for row in cars:
+                if len(row) < 3:  # Ensure row has all required fields
+                    print(f"Skipping malformed row: {row}")
+                    continue
+                
+                try:
+                    # Create the Vehicle object
+                    vehicle = Vehicle(make=str(row['make']), model=str(row['model']), year=int(row['year']))
+                    session.add(vehicle)
+                    cars_count += 1
+                    print(f"Adding vehicle to db: {vehicle}")
+
+                except ValueError as e:
+                    print(f"Skipping Incorrect Row: {row}, Error: {e}")
+
+            try:
+                session.commit()
+                print(f"{cars_count} vehicles committed: {vehicle}")
+            except IntegrityError as e:
+                session.rollback()  # Rollback only for this specific row
+                print(f"IntegrityError occurred for {vehicle}: {e.orig} - Skipping this row.")
+
+            print("CSV import complete.")
+
+
 # def add_part_to_build(build_id: int, part_id: int):
 #     with Session(engine) as session:
 #         parts = session.exec(select(Part)).all()

@@ -31,17 +31,6 @@ class VehicleResponse(BaseModel):
     class Config:
         from_attributes = True  # This allows the Pydantic model to work with SQLAlchemy models
 
-class BuildResponse(BaseModel):
-    id: int
-    user_id: int
-    vehicle_id: int 
-    nickname: str | None 
-    cover_picture_url: str
-    description: str | None
-
-    vehicle: VehicleResponse
-    owner: UserResponse
-
 class PartResponse(BaseModel):
     id: int 
     brand_id: int
@@ -57,3 +46,15 @@ class PartResponse(BaseModel):
     brand: Brand
     part_type: PartType
     submitted_by: UserResponse
+
+class BuildResponse(BaseModel):
+    id: int
+    user_id: int
+    vehicle_id: int 
+    nickname: str | None 
+    cover_picture_url: str
+    description: str | None
+
+    vehicle: VehicleResponse
+    owner: UserResponse
+    parts: list[PartResponse]

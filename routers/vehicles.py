@@ -52,6 +52,7 @@ def get_models_from_year_and_make(year: int, make: str, session: SessionDep):
     models = session.exec(
         select(Vehicle)
         .where(Vehicle.year == year, Vehicle.make == make)
+        .order_by(Vehicle.model.asc())
     ).all()
 
     if not models:

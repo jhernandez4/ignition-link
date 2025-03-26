@@ -5,7 +5,7 @@ from sqlmodel import select, Session
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from datetime import datetime, timezone 
-from ..database import Post, User, Vehicle, Build
+from ..database import Post, User, Vehicle, Build, Part
 from ..models import BuildResponse
 from ..dependencies import (
     get_session, get_user_from_cookie, encode_model_to_json
@@ -121,3 +121,52 @@ def get_builds_from_user_id(
         )
     
     return builds_from_user_id
+
+@router.patch("/{build_id}/add-part/{part_id}", response_model=BuildResponse)
+def add_part_to_build(
+    build_id: int,
+    part_id: int,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    part_to_add = session.exec(
+        select(Part)
+        .where(Part.id == part_id)
+    ).first()
+
+    if not part_to_add:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to add part to build. Part with id {part_id} not found"
+        )
+    
+    build_to_edit = session.exec(
+        select(Build)
+        .where(Build.id == build_id)
+    ).first()
+
+    if not build_to_edit:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to add part to build. Build with build id {build_id} not found"
+        )
+    
+    if build_to_edit.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Failed to add part to build. You are not the owner of this build"
+        )
+
+    if part_to_add in build_to_edit.parts:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to to add part to build. Part is already on this build"
+        )
+
+    build_to_edit.parts.append(part_to_add)
+    
+    session.add(build_to_edit)
+    session.commit()
+    session.refresh(build_to_edit)
+
+    return build_to_edit

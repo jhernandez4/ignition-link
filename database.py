@@ -26,6 +26,7 @@ class User(SQLModel, table=True):
 
     posts: list["Post"] = Relationship(back_populates="user")
     builds: list["Build"] = Relationship(back_populates="owner")
+    part_submissions: list["Part"] = Relationship(back_populates="submitted_by")
 
 class Post(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -69,25 +70,34 @@ class Build(SQLModel, table=True):
     vehicle: Vehicle = Relationship(back_populates="builds")
     parts: list["Part"] = Relationship(back_populates="builds", link_model=BuildPartLink)
 
+class PartType(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    type: str 
+
+    parts: list["Part"] = Relationship(back_populates="part_type")
+
+class Brand(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+
+    parts: list["Part"] = Relationship(back_populates="brand")
+
 class Part(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    type: str
-    brand: str
-    part_name: str
+    brand_id: int = Field(foreign_key="brand.id")
+    submitted_by_id: int = Field(foreign_key="user.id")
+    type_id: int = Field(foreign_key="parttype.id")
+    part_name: str = Field(index=True)
+    part_number: str | None = Field(default=None)
+    image_url: str | None = Field(default=None)
+    description: str | None = Field(default=None)
+    is_verified: bool = Field(default=False) # for admin/mods to finalize image, brand, number, etc
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+    brand: Brand = Relationship(back_populates="parts")
     builds: list["Build"] = Relationship(back_populates="parts", link_model=BuildPartLink)
-
-    # exhaust: Optional[str] = None
-    # wheels: Optional[str] = None
-    # suspension: Optional[str] = None
-    # intake: Optional[str] = None
-    # forced_injection: Optional[str] = None
-    # interior_cosmetics: Optional[str] = None
-    # exterior_cosmetics: Optional[str] = None
-    # fueling: Optional[str] = None
-    # brakes: Optional[str] = None
-    # tune: Optional[str] = None
-    # body: Optional[str] = None
+    part_type: PartType = Relationship(back_populates="parts")
+    submitted_by: User = Relationship(back_populates="part_submissions")
 
 PSQL_URI = os.getenv("PSQL_URI")
 
@@ -100,37 +110,31 @@ engine = create_engine(PSQL_URI)
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
-# def convert_parts_to_db(filename: str):
-#     with Session(engine) as session:
-#         # Check if the Parts table has any records
-#         existing_parts = session.exec(select(Part)).first()
-#         if existing_parts:
-#             print("Parts database already populated. Skipping CSV import.")
-#             return  
+def insert_brands_to_db(filename: str):
+    with Session(engine) as session:
+        existing_brand = session.exec(select(Brand)).first()
+        if existing_brand:
+            print("Brand table already populated. Skipping brand insertions")
+            return
 
-#     print("Parts database is empty. Populating from CSV...")
+    print("Brand table is empty. Populating from CSV...")
+    if filename.startswith("http"):
+        response = requests.get(filename)
+        response.raise_for_status() 
+        file_content = io.StringIO(response.text)
+    else:
+        file_content = open(filename, newline="r", encoding="utf-8")  # Open local file
 
-#     with open(filename, newline="", encoding="utf-8") as file:
-#         parts = csv.DictReader(file)
-#         with Session(engine) as session:
-#             try:
-#                 for row in parts:
-#                     if len(row) < 4:  # Ensure row has all required fields
-#                         print(f"Skipping malformed row: {row}")
-#                         continue
-                    
-#                     try:
-#                         parts = Part(car=str(row['car']), type=str(row['type']), brand=str(row['brand']), model=str(row['model']))
-#                         session.add(parts)
-#                     except ValueError as e:
-#                         print(f"Skipping Incorrect Row: {row}, Error: {e}")
-#                 session.commit()
-#                 print("Commit Successful!")
-#             except Exception as e:
-#                 session.rollback()
-#                 print(f"Error occurred: {e}")
-#             finally:
-#                 session.close()
+    with file_content as file:
+        brands_list = [line.strip() for line in file if line.strip()]
+    
+    with Session(engine) as session:
+        for new_brand in brands_list:
+            new_brand = Brand(name=new_brand)
+            session.add(new_brand)
+            session.commit()
+            session.refresh(new_brand)
+            print(f"{new_brand.name} added to the brand table")
 
 def convert_csv_to_db(filename: str):
     with Session(engine) as session:
@@ -175,6 +179,21 @@ def convert_csv_to_db(filename: str):
                     print(f"Skipping Incorrect Row: {row}, Error: {e}")
 
             print("CSV import complete.")
+
+def populate_part_types():
+    types = [
+        "Exhaust",
+        "Wheels",
+        "Suspension",
+        "Intake",
+        "Forced Induction",
+        "Interior Cosmetics",
+        "Exterior Cosmetics",
+        "Fueling",
+        "Brakes",
+        "Tune",
+        "Body"
+    ]
 
 def import_unique_vehicles_from_csv(filename: str):
     with Session(engine) as session:
@@ -222,35 +241,18 @@ def import_unique_vehicles_from_csv(filename: str):
 
             print("CSV import complete.")
 
+    with Session(engine) as session:
+        db_types = session.exec(select(PartType)).all()
 
-# def add_part_to_build(build_id: int, part_id: int):
-#     with Session(engine) as session:
-#         parts = session.exec(select(Part)).all()
-
-#     if not parts:
-#         return "No Parts Found"
-    
-#     print ("Available Parts: ")
-#     for part in parts:
-#         print(f"{part.id}) {part.type}: {part.brand} {part.model}")
-
-#     # Check if build and part exist
-#     build = session.exec(select(Build).where(Build.id == build_id)).first()
-#     part = session.exec(select(Part).where(Part.id == part_id)).first()
-
-#     if not build or not part:
-#         return "No Build or Part found!"
-    
-#     existing_link = session.exec(select(BuildPartLink).where(BuildPartLink.build_id == build_id, BuildPartLink.part_id == part_id))
-
-#     if existing_link:
-#         return "Part is already added to the Build"
-    
-#     link = BuildPartLink(build_id=build_id, part_id=part_id)
-#     session.add(link)
-#     session.commit()
-
-#     return f"Added {part.brand} {part.model} to Build {build.id}"
+        if not db_types:
+            for type in types:
+                new_type = PartType(type=type) 
+                session.add(new_type)
+                session.commit()
+                session.refresh(new_type)
+                print(f"Part type {new_type} has been added")
+        else:
+            print("Part types table is already populated. Skipping type insertions")
 
 def get_db():
     with Session(engine) as session:

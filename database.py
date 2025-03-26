@@ -245,7 +245,7 @@ def import_unique_vehicles_from_csv(filename: str):
         db_types = session.exec(select(PartType)).all()
 
         if not db_types:
-            for type in types:
+            for type in db_types:
                 new_type = PartType(type=type) 
                 session.add(new_type)
                 session.commit()

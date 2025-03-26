@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import (
     create_db_and_tables, convert_csv_to_db, populate_part_types,
-    insert_brands_to_db 
+    insert_brands_to_db, import_unique_vehicles_from_csv
 )
 from .routers import (
     auth, validation, users, posts, admin, vehicles, builds, parts
@@ -49,12 +49,15 @@ def on_startup():
     if not BRANDS_TXT_PATH:
         raise RuntimeError("BRANDS_TXT_PATH is not set in the environment variables")
 
+    UNIQUE_VEHICLES_CSV_PATH = os.getenv("UNIQUE_VEHICLES_CSV_PATH")
+    if not UNIQUE_VEHICLES_CSV_PATH:
+        raise RuntimeError("UNIQUE_VEHICLES_CSV_PATH is not set in the environment variables.")
+
     create_db_and_tables()
-    convert_csv_to_db(VEHICLES_CSV_PATH)
+    # convert_csv_to_db(VEHICLES_CSV_PATH)
     insert_brands_to_db(BRANDS_TXT_PATH)
     populate_part_types()
-    # convert_parts_to_db("parts.csv")
-    # add_part_to_build()
+    import_unique_vehicles_from_csv(UNIQUE_VEHICLES_CSV_PATH)
 
     # Initialize Firebase
     firebase_key_path = os.getenv("FIREBASE_KEY_PATH")

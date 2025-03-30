@@ -57,4 +57,6 @@ class BuildResponse(BaseModel):
 
     vehicle: VehicleResponse
     owner: UserResponse
+
+class BuildWithPartsResponse(BuildResponse):
     parts: list[PartResponse]

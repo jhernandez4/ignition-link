@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from datetime import datetime, timezone 
 from ..database import Post, User, Vehicle, Build, Part
-from ..models import BuildResponse
+from ..models import BuildResponse, BuildWithPartsResponse
 from ..dependencies import (
     get_session, get_user_from_cookie, encode_model_to_json
 )
@@ -80,7 +80,7 @@ def edit_build_info(
 
     return build_to_edit
 
-@router.get("/{build_id}", response_model=BuildResponse)
+@router.get("/{build_id}", response_model=BuildWithPartsResponse)
 def get_build_from_build_id(
     build_id: int,
     session: SessionDep
@@ -122,7 +122,7 @@ def get_builds_from_user_id(
     
     return builds_from_user_id
 
-@router.patch("/{build_id}/add-part/{part_id}", response_model=BuildResponse)
+@router.patch("/{build_id}/add-part/{part_id}", response_model=BuildWithPartsResponse)
 def add_part_to_build(
     build_id: int,
     part_id: int,

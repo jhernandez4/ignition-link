@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from typing import Annotated
-from sqlmodel import select, Session
+from sqlmodel import select, Session, or_
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from datetime import datetime, timezone 
@@ -89,6 +89,37 @@ def create_new_part(
     session.refresh(new_part)
 
     return new_part
+
+@router.get("/query", response_model=list[PartResponse])
+def query_parts_by_part_name(
+    part_name: str, 
+    session: SessionDep,
+    offset: int = 0,
+    # Less than or equal to 5; default to 5 
+    limit: Annotated[int, Query(le=5)] = 5,
+):
+    parts_list = session.exec(
+        select(Part)
+        .join(Brand)
+        .where(
+            # Include brand name when searching part name
+            or_(
+                Part.part_name.ilike(f"%{part_name}%"),
+                Brand.name.ilike(f"%{part_name}%")
+            )
+        )
+        .order_by(Part.part_name.asc())
+        .offset(offset)
+        .limit(limit)
+    ).all()
+
+    if parts_list is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Failed to retrieve parts. List is null"
+        )
+    
+    return parts_list 
 
 @router.delete("/{part_id}")
 def delete_part_by_part_id(

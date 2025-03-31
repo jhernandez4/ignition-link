@@ -118,6 +118,30 @@ def get_users_by_username(
             content={"message": "An error occurred while querying the database."}
         )
 
+@router.get("/vehicle-search", response_model=list[UserResponse])
+def get_users_by_vehicle_owned(
+    vehicle_id: int,
+    session: SessionDep,
+    offset: int = 0,
+    # Less than or equal to 100; default to 100
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    users = session.exec(
+        select(User)
+        .join(User.builds)  # Join with the builds relationship
+        .where(Build.vehicle_id == vehicle_id)  # Correctly filter by vehicle_id in builds
+        .offset(offset)
+        .limit(limit)
+    )
+
+    if users is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Failed to retrieve users. List is null"
+        )
+    
+    return users
+
 @router.get("/{user_id}")
 def read_user_by_id(user_id: int, session: SessionDep):
     try:
@@ -170,27 +194,3 @@ def read_user_by_username(username: str, session: SessionDep):
             "user": UserResponse.model_validate(user).model_dump()
         }
     )
-
-@router.get("/vehicle-search/{vehicle_id}", response_model=list[UserResponse])
-def get_users_by_vehicle_owned(
-    vehicle_id: int,
-    session: SessionDep,
-    offset: int = 0,
-    # Less than or equal to 100; default to 100
-    limit: Annotated[int, Query(le=100)] = 100,
-):
-    users = session.exec(
-        select(User)
-        .join(User.builds)  # Join with the builds relationship
-        .where(Build.vehicle_id == vehicle_id)  # Correctly filter by vehicle_id in builds
-        .offset(offset)
-        .limit(limit)
-    )
-
-    if users is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Failed to retrieve users. List is null"
-        )
-    
-    return users

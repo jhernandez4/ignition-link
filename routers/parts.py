@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from typing import Annotated
-from sqlmodel import select, Session, or_
+from sqlmodel import select, Session, or_, func
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from datetime import datetime, timezone 
@@ -104,8 +104,8 @@ def query_parts_by_part_name(
         .where(
             # Include brand name when searching part name
             or_(
-                Part.part_name.ilike(f"%{part_name}%"),
-                Brand.name.ilike(f"%{part_name}%")
+                func.similarity(Part.part_name, part_name) > 0.1,  # Similarity threshold for part_name
+                func.similarity(Brand.name, part_name) > 0.1  # Similarity threshold for brand_name
             )
         )
         .order_by(Part.part_name.asc())

@@ -2,6 +2,7 @@ from sqlmodel import (
     Field, Session, SQLModel, create_engine, select, Relationship,
     UniqueConstraint
 )
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 import os
 import csv
@@ -257,3 +258,13 @@ def import_unique_vehicles_from_csv(filename: str):
 def get_db():
     with Session(engine) as session:
         yield session
+
+def install_fuzzy_search_extension():
+    with Session(engine) as session:
+        print("Verifying installation for PSQL fuzzy search extension...")
+        try:
+            session.exec(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+            session.commit()  # Commit the transaction if needed
+            print("Extension pg_trgm installed successfully.")
+        except Exception as e:
+            print(f"Error installing extension: {e}")

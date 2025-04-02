@@ -37,10 +37,10 @@ class PartResponse(BaseModel):
     type_id: int
     submitted_by_id: int
     part_name: str
-    part_number: str 
-    image_url: str
+    part_number: str | None
+    image_url: str | None
     is_verified: bool
-    description: str
+    description: str | None
     created_at: datetime 
 
     brand: Brand

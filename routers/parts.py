@@ -143,7 +143,13 @@ def delete_part_by_part_id(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Failed to delete part. You do not have permission to delete this part"
         )
-    
+
+    if part_to_delete.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Failed to delete part. Cannot delete verified parts"
+        ) 
+
     session.delete(part_to_delete)
     session.commit()
 

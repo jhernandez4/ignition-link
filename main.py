@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import (
     create_db_and_tables, convert_csv_to_db, populate_part_types,
-    insert_brands_to_db, import_unique_vehicles_from_csv
+    insert_brands_to_db, import_unique_vehicles_from_csv, install_fuzzy_search_extension
 )
 from .routers import (
     auth, validation, users, posts, admin, vehicles, builds, parts
@@ -58,6 +58,7 @@ def on_startup():
     insert_brands_to_db(BRANDS_TXT_PATH)
     populate_part_types()
     import_unique_vehicles_from_csv(UNIQUE_VEHICLES_CSV_PATH)
+    install_fuzzy_search_extension()
 
     # Initialize Firebase
     firebase_key_path = os.getenv("FIREBASE_KEY_PATH")

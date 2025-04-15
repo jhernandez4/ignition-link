@@ -183,17 +183,19 @@ def convert_csv_to_db(filename: str):
 
 def populate_part_types():
     types = [
-        "Exhaust",
-        "Wheels",
-        "Suspension",
-        "Intake",
-        "Forced Induction",
-        "Interior Cosmetics",
-        "Exterior Cosmetics",
-        "Fueling",
+        "Body",
         "Brakes",
+        "Engine",
+        "Exhaust",
+        "Exterior Cosmetics",
+        "Forced Induction",
+        "Fueling",
+        "Intake",
+        "Interior Cosmetics",
+        "Suspension",
         "Tune",
-        "Body"
+        "Wheels",
+        "Other"
     ]
 
     types.sort()

@@ -14,8 +14,8 @@ from ..dependencies import (
 )
 
 router = APIRouter(
-    prefix="/link",
-    tags=["link"],
+    prefix="/scrape",
+    tags=["scrape"],
 )
 
 SessionDep = Annotated[Session, Depends(get_session)]

@@ -51,12 +51,18 @@ class Like(SQLModel, table=True):
     post_id: int = Field(foreign_key="post.id")
     user_id: int = Field(foreign_key="user.id")
 
+    user: User = Relationship(back_populates="likes")
+    post: Post = Relationship(back_populates="likes")
+
 class Comment(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     post_id: int = Field(foreign_key="post.id")
     user_id: int = Field(foreign_key="user.id")
     comment: str
     created_at: datetime | None = Field(default=None)
+
+    user: User = Relationship(back_populates="comments")
+    post: Post = Relationship(back_populates="comments")
 
 class Vehicle(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)

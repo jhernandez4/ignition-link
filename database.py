@@ -196,6 +196,23 @@ def populate_part_types():
         "Body"
     ]
 
+    types.sort()
+
+    with Session(engine) as session:
+        part_types_db = session.exec(
+            select(PartType)
+        ).all()
+
+        if part_types_db:
+            print("Part types table populated. Skipping import")
+            return
+        else:
+            for type in types:
+                new_type = PartType(type=type)
+                session.add(new_type)
+            session.commit() 
+            print("Part types imported to tables.")
+
 def import_unique_vehicles_from_csv(filename: str):
     with Session(engine) as session:
         # Check if the Vehicles table has any records

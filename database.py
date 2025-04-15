@@ -26,6 +26,8 @@ class User(SQLModel, table=True):
     profile_pic_url: str = Field(default="https://i.imgur.com/L5AoglL.png")
 
     posts: list["Post"] = Relationship(back_populates="user")
+    comments: list["Comment"] = Relationship(back_populates="user")
+    likes: list["Like"] = Relationship(back_populates="user")
     builds: list["Build"] = Relationship(back_populates="owner")
     part_submissions: list["Part"] = Relationship(back_populates="submitted_by")
 
@@ -39,6 +41,22 @@ class Post(SQLModel, table=True):
     # Every post must come from a user, so can't be none
     user_id: int = Field(foreign_key="user.id")
     user: User = Relationship(back_populates="posts")
+
+    # Display Likes and Comments
+    comments: list["Comment"] = Relationship(back_populates="post")
+    likes: list["Like"] = Relationship(back_populates="post")
+
+class Like(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    post_id: int = Field(foreign_key="post.id")
+    user_id: int = Field(foreign_key="user.id")
+
+class Comment(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    post_id: int = Field(foreign_key="post.id")
+    user_id: int = Field(foreign_key="user.id")
+    comment: str
+    created_at: datetime | None = Field(default=None)
 
 class Vehicle(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)

@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from typing import Annotated
-from sqlmodel import select, Session
+from sqlmodel import select, Session, func
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from datetime import datetime, timezone 
-from ..database import Post, User, Vehicle, Build, Part
+from ..database import User, Vehicle, Build, Part, PartType, BuildPartLink
 from ..models import BuildResponse, BuildWithPartsResponse
 from ..dependencies import (
     get_session, get_user_from_cookie, encode_model_to_json
@@ -252,3 +252,27 @@ def add_part_to_build(
     session.refresh(build_to_edit)
 
     return build_to_edit
+
+@router.get("/{build_id}/part-categories")
+def get_build_part_categories(
+    build_id: int,
+    session: SessionDep
+):
+    part_categories = session.exec(
+        select(
+            PartType.type, # Category name
+            func.count(Part.id) # Count of parts in this category
+        )
+        .join(Part, Part.type_id == PartType.id)
+        .join(BuildPartLink, BuildPartLink.part_id == Part.id)
+        .where(BuildPartLink.build_id == build_id)
+        .group_by(PartType.type)
+    ).all()
+
+
+    categories = [
+        {"name": part_type, "count": count}
+        for part_type, count in part_categories
+    ]
+
+    return categories

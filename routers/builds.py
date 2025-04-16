@@ -65,7 +65,7 @@ def edit_build_info(
     if build_to_edit.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Failed to edit build. You do not have permission to edit this build"
+            detail="Failed to edit build. You do not have permission to edit this build."
         )
     
     # exclude_unset excludes values that were not sent by the client 
@@ -97,6 +97,39 @@ def get_build_from_build_id(
         )
 
     return build
+
+@router.delete("/{build_id}")
+def delete_build_by_id(
+    build_id: int,
+    session: SessionDep,
+    current_user: CurrentUserDep
+):
+    build_to_delete = session.exec(
+        select(Build)
+        .where(Build.id == build_id)
+    ).first()
+
+    if not build_to_delete:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to delete build. Build with id {build_id} does not exist."
+        )
+    
+    if build_to_delete.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Failed to delete build. You do not have permission to delete this build."
+        )
+    
+    session.delete(build_to_delete)
+    session.commit()
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": f"Successfully deleted build with id {build_id}"
+        }
+    )
 
 @router.get("", response_model=list[BuildResponse])
 def get_builds_from_user_id(

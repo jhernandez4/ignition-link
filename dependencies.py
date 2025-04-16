@@ -7,6 +7,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from firebase_admin import auth, exceptions
 from typing import Annotated
 from pydantic import BaseModel
+from google import genai
+from dotenv import load_dotenv
+import os
 
 # Create a database session
 def get_session():
@@ -135,3 +138,12 @@ def get_current_user_is_admin(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Access denied: Admin privileges required"
         )
+
+def get_gemini_client():
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_APIKEY is not set in environment variables")
+
+    client = genai.Client(api_key=GEMINI_API_KEY)
+
+    return client

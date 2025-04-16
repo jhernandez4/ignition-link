@@ -60,3 +60,11 @@ class BuildResponse(BaseModel):
 
 class BuildWithPartsResponse(BuildResponse):
     parts: list[PartResponse]
+
+class PartLinkResponse(BaseModel):
+    brand: Brand
+    type_id: int
+    part_name: str
+    part_number: str | None
+    image_url: str | None
+    description: str | None

@@ -5,6 +5,7 @@ from sqlmodel import select, Session, or_, func
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from bs4 import BeautifulSoup
+from google.genai.errors import ServerError
 import httpx
 import json
 from ..database import User, PartType, Part, Brand
@@ -59,7 +60,7 @@ async def get_data_from_part_page_link(
     src link. For example: "https://conceptzperformance.com" and the relative path "/items/33725/original/3.jpg" should 
     then be "https://conceptzperformance.com/items/33725/original/3.jpg"
     Respond as a JSON object.
-    Output should be a plain string, not in a Markdown code block 
+    Output should be plain text, not in a Markdown code block 
     Here is an example of how the output should be structured:
 
     {{
@@ -70,16 +71,34 @@ async def get_data_from_part_page_link(
         "description": "This is a description that describes the car part"
     }}
 
-    Make sure to get the correct description from the HTML. 
-    Return the description as it is in the html; do NOT modify or summarize the words.
+    - Description must be readable, plain English. 
+    - Remove any non-standard or special characters (like ↕, ♠, ☻, etc).
+    - If the description includes HTML, extract only the clean, human-readable text.
 
     HTML:
     {html}""" 
+    
+    try:
+        result = gemini.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[prompt]
+        )
+    
+    except ServerError as e:
+        print(f"Gemini API error: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="The AI model is currently overloaded. Please try again later."
+        )
 
-    result = gemini.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=[prompt]
-    )
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="An unexpected error occurred."
+        )
+
+    print("This is gemini first response ", result.text)
 
     try:
         data = result.text.strip("```json").strip("```")  # Clean code block if Gemini returns it

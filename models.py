@@ -62,7 +62,7 @@ class BuildWithPartsResponse(BuildResponse):
     parts: list[PartResponse]
 
 class PartLinkResponse(BaseModel):
-    brand_id: int
+    brand: Brand
     type_id: int
     part_name: str
     part_number: str | None

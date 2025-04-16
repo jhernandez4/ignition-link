@@ -66,6 +66,24 @@ def query_brands(
     
     return brands_list
 
+@router.get("/brands/{brand_id}", response_model=Brand)
+def get_part_brand_by_id(
+    brand_id: int,
+    session: SessionDep
+):
+    brand = session.exec(
+        select(Brand)
+        .where(Brand.id == brand_id)
+    ).first()
+
+    if not brand:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to retrieve brand. Brand with id {brand_id} does not exist"
+        )
+
+    return brand
+
 class CreateNewPartRequest(BaseModel):
     brand_id: int
     type_id: int

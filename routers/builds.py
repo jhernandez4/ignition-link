@@ -275,4 +275,10 @@ def get_build_part_categories(
         for part_type, count in part_categories
     ]
 
+    # Calculate the total count of all parts (for "All" category)
+    total_parts = sum(category["count"] for category in categories)
+
+    # Insert the "All" category at the beginning
+    categories.insert(0, {"name": "All", "count": total_parts})
+
     return categories

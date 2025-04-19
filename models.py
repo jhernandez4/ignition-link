@@ -47,7 +47,7 @@ class PartResponse(BaseModel):
     part_type: PartType
     submitted_by: UserResponse
 
-class BuildResponse(BaseModel):
+class BuildBasicResponse(BaseModel):
     id: int
     user_id: int
     vehicle_id: int 
@@ -55,11 +55,15 @@ class BuildResponse(BaseModel):
     cover_picture_url: str
     description: str | None
 
+class BuildResponse(BuildBasicResponse):
     vehicle: VehicleResponse
     owner: UserResponse
 
 class BuildWithPartsResponse(BuildResponse):
     parts: list[PartResponse]
+
+class UserWithBuildsResponse(UserResponse):
+    builds: list[BuildBasicResponse] 
 
 class PartLinkResponse(BaseModel):
     brand: Brand

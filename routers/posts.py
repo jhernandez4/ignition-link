@@ -47,7 +47,7 @@ def create_post(
         }
     )
 
-@router.get("")
+@router.get("", response_model=list[PostResponse])
 def get_posts_from_user_id(
     user_id: int,
     session: SessionDep,
@@ -69,13 +69,7 @@ def get_posts_from_user_id(
             detail=f"Posts list for user is null"
         )
 
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={
-            "message": f"Successfully retrieved {len(posts_from_user)} post(s) from user with ID {user_id}",
-            "posts": [encode_model_to_json(post) for post in posts_from_user] 
-        }
-    )
+    return posts_from_user
 
 @router.get("/all", response_model=list[PostResponse])
 def get_all_posts(
@@ -141,7 +135,7 @@ def edit_post(
         }
     )
 
-@router.get("/{post_id}")
+@router.get("/{post_id}", response_model=PostResponse)
 def get_post_by_id(post_id: int, session: SessionDep):
     post = session.exec(
         select(Post)
@@ -154,10 +148,4 @@ def get_post_by_id(post_id: int, session: SessionDep):
             detail=f"No post found with the ID {post_id}"
         )
     
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={
-            "message": "Post retrieved successfully!",
-            "post": encode_model_to_json(post)
-        }
-    )
+    return post

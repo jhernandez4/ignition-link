@@ -202,7 +202,12 @@ def remove_part_from_build(
     session.commit()
     session.refresh(build_to_edit)
 
-    return build_to_edit
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": f"Successfully removed part with id {part_id} from build"
+        }
+    ) 
     
 @router.patch("/{build_id}/part/{part_id}", response_model=BuildWithPartsResponse)
 def add_part_to_build(

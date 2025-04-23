@@ -34,15 +34,16 @@ def get_part_types(session: SessionDep):
     return part_types_list
 
 @router.get("/category", response_model=list[PartResponse])
-def get_parts_from_category(
-    type_id: int,
+def get_parts_from_category_slug(
+    slug: str,
     session: SessionDep,
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100,
 ):
     parts_list = session.exec(
         select(Part)
-        .where(Part.type_id == type_id)
+        .join(PartType)
+        .where(PartType.slug == slug)
         .offset(offset)
         .limit(limit)
         .order_by(Part.part_name.asc())
@@ -51,7 +52,7 @@ def get_parts_from_category(
     if parts_list is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Failed to get parts from category with id {type_id}. List of parts does not exist."
+            detail=f"Failed to get parts from category '{slug}'. List of parts does not exist."
         )
 
     return parts_list

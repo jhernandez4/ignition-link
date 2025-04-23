@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Optional
 import requests
 import io
+import re
 
 load_dotenv()
 
@@ -74,6 +75,7 @@ class Build(SQLModel, table=True):
 class PartType(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     type: str 
+    slug: str = Field(index=True)
 
     parts: list["Part"] = Relationship(back_populates="part_type")
 
@@ -110,6 +112,9 @@ engine = create_engine(PSQL_URI)
 # Create the models for all models defined above
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+
+def slugify(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
 def insert_brands_to_db(filename: str):
     with Session(engine) as session:
@@ -206,8 +211,9 @@ def populate_part_types():
             print("Part types table populated. Skipping import")
             return
         else:
-            for type in types:
-                new_type = PartType(type=type)
+            for type_name in types:
+                slug = slugify(type_name)
+                new_type = PartType(type=type_name, slug=slug)
                 session.add(new_type)
             session.commit() 
             print("Part types imported to tables.")

@@ -88,6 +88,25 @@ def get_parts_from_brand(
     
     return parts_list
 
+@router.get("/filter", response_model=list[PartResponse])
+def get_parts_from_brand_and_category(
+    brand_id: int,
+    type_id: int,
+    session: SessionDep,
+    offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100
+):
+    parts_list = session.exec(
+        select(Part)
+        .where(Part.brand_id == brand_id)
+        .where(Part.type_id == type_id)
+        .offset(offset)
+        .limit(limit)
+        .order_by(Part.part_name.asc())
+    ).all()
+
+    return parts_list
+
 @router.get("/brands/query", response_model=list[Brand])
 def query_brands(
     brand_name: str,

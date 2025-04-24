@@ -82,6 +82,7 @@ class PartType(SQLModel, table=True):
 class Brand(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True, unique=True)
+    slug: str = Field(index=True, unique=True)
 
     parts: list["Part"] = Relationship(back_populates="brand")
 
@@ -136,7 +137,8 @@ def insert_brands_to_db(filename: str):
     
     with Session(engine) as session:
         for new_brand in brands_list:
-            new_brand = Brand(name=new_brand)
+            slug = slugify(new_brand)
+            new_brand = Brand(name=new_brand, slug=slug)
             session.add(new_brand)
             session.commit()
             session.refresh(new_brand)

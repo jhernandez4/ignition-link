@@ -33,6 +33,30 @@ def get_part_types(session: SessionDep):
 
     return part_types_list
 
+@router.get("/category", response_model=list[PartResponse])
+def get_parts_from_category_slug(
+    slug: str,
+    session: SessionDep,
+    offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    parts_list = session.exec(
+        select(Part)
+        .join(PartType)
+        .where(PartType.slug == slug)
+        .offset(offset)
+        .limit(limit)
+        .order_by(Part.part_name.asc())
+    ).all()
+
+    if parts_list is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to get parts from category '{slug}'. List of parts does not exist."
+        )
+
+    return parts_list
+
 @router.get("/brands", response_model=list[Brand])
 def get_brands_list(session: SessionDep):
     brands_list = session.exec(
@@ -41,6 +65,49 @@ def get_brands_list(session: SessionDep):
     ).all()
 
     return brands_list
+
+@router.get("/from-brand", response_model=list[PartResponse])
+def get_parts_from_brand_slug(
+    slug: str,
+    session: SessionDep,
+    offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    parts_list = session.exec(
+        select(Part)
+        .join(Brand)
+        .where(Brand.slug == slug)
+        .offset(offset)
+        .limit(limit)
+        .order_by(Part.part_name.asc())
+    ).all()
+
+    if parts_list is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to retrieve parts from brand '{slug}'. List of parts is null"
+        )
+    
+    return parts_list
+
+@router.get("/filter", response_model=list[PartResponse])
+def get_parts_from_brand_and_category(
+    brand_id: int,
+    type_id: int,
+    session: SessionDep,
+    offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100
+):
+    parts_list = session.exec(
+        select(Part)
+        .where(Part.brand_id == brand_id)
+        .where(Part.type_id == type_id)
+        .offset(offset)
+        .limit(limit)
+        .order_by(Part.part_name.asc())
+    ).all()
+
+    return parts_list
 
 @router.get("/brands/query", response_model=list[Brand])
 def query_brands(
@@ -65,6 +132,24 @@ def query_brands(
         )
     
     return brands_list
+
+@router.get("/brands/{brand_id}", response_model=Brand)
+def get_part_brand_by_id(
+    brand_id: int,
+    session: SessionDep
+):
+    brand = session.exec(
+        select(Brand)
+        .where(Brand.id == brand_id)
+    ).first()
+
+    if not brand:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to retrieve brand. Brand with id {brand_id} does not exist"
+        )
+
+    return brand
 
 class CreateNewPartRequest(BaseModel):
     brand_id: int

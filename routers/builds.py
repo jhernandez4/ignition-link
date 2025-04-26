@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from typing import Annotated
-from sqlmodel import select, Session
+from sqlmodel import select, Session, func
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from datetime import datetime, timezone 
-from ..database import Post, User, Vehicle, Build, Part
+from ..database import User, Vehicle, Build, Part, PartType, BuildPartLink
 from ..models import BuildResponse, BuildWithPartsResponse
 from ..dependencies import (
     get_session, get_user_from_cookie, encode_model_to_json
@@ -65,7 +65,7 @@ def edit_build_info(
     if build_to_edit.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Failed to edit build. You do not have permission to edit this build"
+            detail="Failed to edit build. You do not have permission to edit this build."
         )
     
     # exclude_unset excludes values that were not sent by the client 
@@ -97,6 +97,39 @@ def get_build_from_build_id(
         )
 
     return build
+
+@router.delete("/{build_id}")
+def delete_build_by_id(
+    build_id: int,
+    session: SessionDep,
+    current_user: CurrentUserDep
+):
+    build_to_delete = session.exec(
+        select(Build)
+        .where(Build.id == build_id)
+    ).first()
+
+    if not build_to_delete:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to delete build. Build with id {build_id} does not exist."
+        )
+    
+    if build_to_delete.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Failed to delete build. You do not have permission to delete this build."
+        )
+    
+    session.delete(build_to_delete)
+    session.commit()
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": f"Successfully deleted build with id {build_id}"
+        }
+    )
 
 @router.get("", response_model=list[BuildResponse])
 def get_builds_from_user_id(
@@ -169,7 +202,12 @@ def remove_part_from_build(
     session.commit()
     session.refresh(build_to_edit)
 
-    return build_to_edit
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": f"Successfully removed part with id {part_id} from build"
+        }
+    ) 
     
 @router.patch("/{build_id}/part/{part_id}", response_model=BuildWithPartsResponse)
 def add_part_to_build(
@@ -219,3 +257,33 @@ def add_part_to_build(
     session.refresh(build_to_edit)
 
     return build_to_edit
+
+@router.get("/{build_id}/part-categories")
+def get_build_part_categories(
+    build_id: int,
+    session: SessionDep
+):
+    part_categories = session.exec(
+        select(
+            PartType.type, # Category name
+            func.count(Part.id) # Count of parts in this category
+        )
+        .join(Part, Part.type_id == PartType.id)
+        .join(BuildPartLink, BuildPartLink.part_id == Part.id)
+        .where(BuildPartLink.build_id == build_id)
+        .group_by(PartType.type)
+    ).all()
+
+
+    categories = [
+        {"name": part_type, "count": count}
+        for part_type, count in part_categories
+    ]
+
+    # Calculate the total count of all parts (for "All" category)
+    total_parts = sum(category["count"] for category in categories)
+
+    # Insert the "All" category at the beginning
+    categories.insert(0, {"name": "All", "count": total_parts})
+
+    return categories

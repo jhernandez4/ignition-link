@@ -6,7 +6,8 @@ from typing import Annotated
 from sqlmodel import Session
 from pydantic import BaseModel
 from ..database import User, Build
-from ..models import UserResponse
+from ..models import UserResponse, UserWithBuildsResponse
+from copy import deepcopy
 from ..dependencies import (
     get_session, check_username_exists, get_user_from_cookie
 )
@@ -118,7 +119,7 @@ def get_users_by_username(
             content={"message": "An error occurred while querying the database."}
         )
 
-@router.get("/vehicle-search", response_model=list[UserResponse])
+@router.get("/vehicle-search", response_model=list[UserWithBuildsResponse])
 def get_users_by_vehicle_owned(
     vehicle_id: int,
     session: SessionDep,
@@ -132,7 +133,7 @@ def get_users_by_vehicle_owned(
         .where(Build.vehicle_id == vehicle_id)  # Correctly filter by vehicle_id in builds
         .offset(offset)
         .limit(limit)
-    )
+    ).unique().all()
 
     if users is None:
         raise HTTPException(
@@ -140,7 +141,16 @@ def get_users_by_vehicle_owned(
             detail="Failed to retrieve users. List is null"
         )
     
-    return users
+    # Build a new list of copied users with filtered builds
+    filtered_user_copies = []
+    for user in users:
+        matching_builds = [b for b in user.builds if b.vehicle_id == vehicle_id]
+        user_copy = deepcopy(user)
+        user_copy.builds = matching_builds
+
+        filtered_user_copies.append(user_copy)
+
+    return filtered_user_copies
 
 @router.get("/{user_id}")
 def read_user_by_id(user_id: int, session: SessionDep):

@@ -72,3 +72,11 @@ class PartLinkResponse(BaseModel):
     part_number: str | None
     image_url: str | None
     description: str | None
+
+class FollowResponse(BaseModel):
+    id: int
+    follower_id: int
+    following_id: int
+
+    class Config:
+        from_attributes = True

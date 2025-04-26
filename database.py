@@ -53,6 +53,17 @@ class Vehicle(SQLModel, table=True):
         UniqueConstraint('year', 'make', 'model', name='uix_year_make_model'),
     )
 
+<<<<<<< Updated upstream
+=======
+class Follow(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    follower_id: int = Field(foreign_key="user.id")
+    following_id: int = Field(foreign_key="user.id")
+
+    follower: Optional["User"] = Relationship(back_populates="following", sa_relationship_kwargs={"foreign_keys": "[Follow.follower_id]"})
+    following: Optional["User"] = Relationship(back_populates="followers", sa_relationship_kwargs={"foreign_keys": "[Follow.following_id]"})
+
+>>>>>>> Stashed changes
 # Create many-to-many relationship between Parts and Builds tables
 class BuildPartLink(SQLModel, table=True):
     build_id: int = Field(default=None, foreign_key="build.id", primary_key=True)

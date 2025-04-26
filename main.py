@@ -5,7 +5,7 @@ from .database import (
     insert_brands_to_db, import_unique_vehicles_from_csv, install_fuzzy_search_extension
 )
 from .routers import (
-    auth, validation, users, posts, admin, vehicles, builds, parts, scrape 
+    auth, validation, users, posts, admin, vehicles, builds, parts, scrape, interactions
 )
 import firebase_admin
 from firebase_admin import credentials
@@ -39,6 +39,7 @@ app.include_router(vehicles.router)
 app.include_router(builds.router)
 app.include_router(parts.router)
 app.include_router(scrape.router)
+app.include_router(interactions.router)
 
 @app.on_event("startup")
 def on_startup():

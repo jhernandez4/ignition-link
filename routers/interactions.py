@@ -130,7 +130,7 @@ def get_all_post_likes(
     return all_likes
 
 # Show the number of likes on a post
-@router.get("/likes/count/{post.id}")
+@router.get("/likes/count/{post_id}")
 def get_like_count(
     post_id: int,
     session: SessionDep

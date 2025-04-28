@@ -24,14 +24,17 @@ class CreateFollowRequest(BaseModel):
     class Config:
         from_attributes = True
 
-@router.post("/follow")
+@router.post("")
 def follow_user(
     request: CreateFollowRequest,
     session: SessionDep,
     current_user: CurrentUserDep
 ):
     if current_user.id == request.following_id:
-        raise HTTPException(status_code=400, detail="You can't follow yourself")
+        raise HTTPException(
+            status_code=400, 
+            detail="You can't follow yourself"
+        )
     
     already_following = session.exec(
         select(Follow).where(Follow.follower_id == current_user.id, Follow.following_id == request.following_id)
@@ -59,7 +62,7 @@ def follow_user(
         }
     )
 
-@router.get("/follow/{user_id}", response_model=list(FollowResponse))
+@router.get("/{user_id}", response_model=list[FollowResponse])
 def get_all_followers(
     user_id: int,
     session: SessionDep,
@@ -78,14 +81,16 @@ def get_all_followers(
         )
     return all_followers
 
-router.get("/follow/count/{user_id}")
+@router.get("/count/{user_id}")
 def get_follower_count(
     user_id: int,
     session: SessionDep
 ):
-    follower_count = session.exec(
-        select(func.count())
+    followers = session.exec(
+        select(Follow)
         .where(Follow.following_id == user_id)
-    ).one()
+    ).all()
 
+    follower_count = len(followers)
+    
     return{"user_id": user_id, "follower_count": follower_count}

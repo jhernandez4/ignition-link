@@ -11,6 +11,10 @@ import firebase_admin
 from firebase_admin import credentials
 from dotenv import load_dotenv
 import os
+# import csv
+# import sys
+
+# # csv.field_size_limit(sys.maxsize)
 
 app = FastAPI()
 
@@ -52,15 +56,15 @@ def on_startup():
     if not BRANDS_TXT_PATH:
         raise RuntimeError("BRANDS_TXT_PATH is not set in the environment variables")
 
-    UNIQUE_VEHICLES_CSV_PATH = os.getenv("UNIQUE_VEHICLES_CSV_PATH")
-    if not UNIQUE_VEHICLES_CSV_PATH:
-        raise RuntimeError("UNIQUE_VEHICLES_CSV_PATH is not set in the environment variables.")
+    # UNIQUE_VEHICLES_CSV_PATH = os.getenv("UNIQUE_VEHICLES_CSV_PATH")
+    # if not UNIQUE_VEHICLES_CSV_PATH:
+    #     raise RuntimeError("UNIQUE_VEHICLES_CSV_PATH is not set in the environment variables.")
 
     create_db_and_tables()
     # convert_csv_to_db(VEHICLES_CSV_PATH)
     insert_brands_to_db(BRANDS_TXT_PATH)
     populate_part_types()
-    import_unique_vehicles_from_csv(UNIQUE_VEHICLES_CSV_PATH)
+    # import_unique_vehicles_from_csv(UNIQUE_VEHICLES_CSV_PATH)
     install_fuzzy_search_extension()
 
     # Initialize Firebase

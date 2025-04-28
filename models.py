@@ -22,6 +22,27 @@ class PostResponse(BaseModel):
 
     user: UserResponse
 
+class CommentResponse(BaseModel):
+    id: int
+    post_id: int
+    user_id: int
+    comment: str
+    created_at: datetime
+
+    user: UserResponse
+
+    class Config:
+        from_attributes = True
+
+class LikeResponse(BaseModel):
+    id: int
+    post_id: int
+    user_id: int
+
+    user: UserResponse
+
+    class Config: from_attributes = True
+
 class VehicleResponse(BaseModel):
     id: int
     make: str

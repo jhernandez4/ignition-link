@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from typing import Annotated, List
-from sqlmodel import select, Session
+from sqlmodel import select, Session, func
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from datetime import datetime, timezone 
@@ -135,9 +135,11 @@ def get_like_count(
     post_id: int,
     session: SessionDep
 ):
-    like_count = session.exec(
+    likes = session.exec(
         select(Like)
         .where(Like.post_id == post_id)
-    ).count()
+    ).all()
+
+    like_count = len(likes)
 
     return{"post_id": post_id, "like_count": like_count}

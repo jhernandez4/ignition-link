@@ -29,6 +29,12 @@ def create_post(
     current_user: CurrentUserDep,
     session: SessionDep,
 ):
+    if not request.post_image_url.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image URL cannot be empty"
+        )
+
     new_post = Post(
         post_image_url=request.post_image_url,
         caption=request.caption,

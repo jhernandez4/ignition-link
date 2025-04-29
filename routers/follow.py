@@ -24,6 +24,7 @@ class CreateFollowRequest(BaseModel):
     class Config:
         from_attributes = True
 
+# Follow users
 @router.post("")
 def follow_user(
     request: CreateFollowRequest,
@@ -62,6 +63,41 @@ def follow_user(
         }
     )
 
+# Unfollow users
+@router.delete("/unfollow")
+def unfollow_user(
+    request: CreateFollowRequest,
+    session: SessionDep,
+    current_user: CurrentUserDep
+):
+    if current_user.id == request.following_id:
+        raise HTTPException(
+            status_code=400,
+            detail="You can't unfollow yourself"
+        )
+    
+    already_following = session.exec(
+        select(Follow)
+        .where(Follow.follower_id == current_user.id, Follow.following_id == request.following_id)
+    ).first()
+
+    if not already_following:
+        raise HTTPException(
+            status_code=400,
+            detail="You don't follow this user"
+        )
+
+    session.delete(already_following)
+    session.commit()
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": "Unfollowed Profile"
+        }
+    )
+
+# Show the list of a users followers
 @router.get("/{user_id}", response_model=list[FollowResponse])
 def get_all_followers(
     user_id: int,
@@ -81,6 +117,7 @@ def get_all_followers(
         )
     return all_followers
 
+# Show how many followers a user has
 @router.get("/count/{user_id}")
 def get_follower_count(
     user_id: int,

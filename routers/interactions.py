@@ -24,7 +24,7 @@ class CreateCommentRequest(BaseModel):
     comment: str
 
 # Allow users to comment on posts
-@router.post("/comment")
+@router.post("/comment", response_model=CommentResponse)
 def create_comment_on_post(
     request: CreateCommentRequest,
     session: SessionDep,
@@ -40,11 +40,32 @@ def create_comment_on_post(
     session.commit()
     session.refresh(new_comment)
 
+    return new_comment
+
+@router.delete("/comment/{comment_id}")
+def delete_comment_on_post(
+    request: CreateCommentRequest,
+    session: SessionDep,
+    current_user: CurrentUserDep
+):
+    new_comment = session.exec(
+        select(Comment)
+        .where(Comment.post_id == request.post_id, Comment.comment == request.comment, Comment.user_id == current_user.id)
+    ).first()
+
+    if not new_comment:
+        raise HTTPException(
+            status_code=400,
+            detail="No comment to delete"
+        )
+    
+    session.delete(new_comment)
+    session.commit()
+    
     return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
+        status_code=status.HTTP_200_OK,
         content={
-            "message": "Comment added successfully",
-            "comment": encode_model_to_json(new_comment)
+            "message": "Comment Deleted"
         }
     )
 
@@ -52,18 +73,21 @@ class CreateLikeRequest(BaseModel):
     post_id: int
 
 # Allow users to like posts
-@router.post("/like")
+@router.post("/like", response_model=LikeResponse)
 def add_like_to_post(
     request: CreateLikeRequest,
     session: SessionDep,
     current_user: CurrentUserDep
 ):
     existing_like = session.exec(
-        select(Like).where(Like.post_id == request.post_id, Like.user_id == current_user.id)
+        select(Like)
+        .where(Like.post_id == request.post_id, Like.user_id == current_user.id)
     ).first()
 
     if existing_like:
-        raise HTTPException(status_code=400, detail="Post already liked")
+        raise HTTPException(
+            status_code=400, 
+            detail="Post already liked")
 
     new_like = Like(
         post_id=request.post_id,
@@ -74,13 +98,35 @@ def add_like_to_post(
     session.commit()
     session.refresh(new_like)
 
+    return new_like
+
+@router.delete("/like")
+def unlike_a_post(
+    request: CreateLikeRequest,
+    session: SessionDep,
+    current_user: CurrentUserDep
+):
+    existing_like = session.exec(
+        select(Like)
+        .where(Like.post_id == request.post_id, Like.user_id == current_user.id)
+    ).first()
+
+    if not existing_like:
+        raise HTTPException(
+            status_code=400,
+            detail="You haven't liked this post"
+        )
+    
+    session.delete(existing_like)
+    session.commit()
+
     return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
+        status_code=status.HTTP_200_OK,
         content={
-            "message": "Post successfully liked",
-            "like": encode_model_to_json(new_like)
+            "message": "Unliked Post"
         }
     )
+
 
 # Show the comments on a post
 @router.get("/comments/{post_id}", response_model=list[CommentResponse])

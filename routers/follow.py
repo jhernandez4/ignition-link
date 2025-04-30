@@ -25,7 +25,7 @@ class CreateFollowRequest(BaseModel):
         from_attributes = True
 
 # Follow users
-@router.post("")
+@router.post("", response_model=FollowResponse)
 def follow_user(
     request: CreateFollowRequest,
     session: SessionDep,
@@ -56,15 +56,10 @@ def follow_user(
     session.commit()
     session.refresh(new_follow)
 
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content={
-            "message": "Followed Profile"
-        }
-    )
+    return new_follow
 
 # Unfollow users
-@router.delete("/unfollow")
+@router.delete("")
 def unfollow_user(
     request: CreateFollowRequest,
     session: SessionDep,
@@ -112,7 +107,7 @@ def get_all_followers(
 
     if all_followers is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=400,
             detail="No followers"
         )
     return all_followers

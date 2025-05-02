@@ -44,6 +44,28 @@ class EditBuildInfoRequest(BaseModel):
     cover_picture_url: str | None = None
     description: str | None = None
 
+@router.get("/all", response_model=list[BuildResponse])
+def get_all_builds(
+    session: SessionDep,
+    offset: int = 0,
+    # Less than or equal to 100; default to 100
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    builds_list = session.exec(
+        select(Build)
+        .offset(offset)
+        .limit(limit)
+        .order_by(Build.id.desc())
+    ).all()
+
+    if builds_list is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to get builds. Builds list is none"
+        )
+
+    return builds_list
+
 @router.patch("/{build_id}", response_model=BuildResponse)
 def edit_build_info(
     build_id: int,

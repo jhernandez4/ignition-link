@@ -23,7 +23,7 @@ class User(SQLModel, table=True):
     email: EmailStr = Field(index=True, unique=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_admin: bool = Field(default=False)
-    bio: str = Field(default="TESTING DEFAULT BIO")
+    bio: str = Field(default="")
     profile_pic_url: str = Field(default="https://i.imgur.com/L5AoglL.png")
 
     posts: list["Post"] = Relationship(back_populates="user")
@@ -88,9 +88,7 @@ class Build(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id")
     vehicle_id: int = Field(foreign_key="vehicle.id")
     nickname: str | None = Field(default=None)
-    cover_picture_url: str | None = Field(
-        default="https://cdn2.iconfinder.com/data/icons/solidix-cars/128/cars_vehicle_motor_front-14-512.png"
-    )
+    cover_picture_url: str | None = Field(default="https://i.imgur.com/wfqeko6.png")
     description: str | None = Field(default=None)
     
     owner: User = Relationship(back_populates="builds")

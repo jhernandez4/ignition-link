@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import select, Session, delete
+from sqlmodel import select, Session, delete, func
 from typing import Annotated
 from sqlmodel import Session
 from pydantic import BaseModel
@@ -138,7 +138,10 @@ def get_users_by_username(
     try:
         users = session.exec(
             select(User)
-            .where(User.username.ilike(f"%{username}%"))
+            .where(
+                # User.username.ilike(f"%{username}%")
+                func.similarity(User.username, username) > 0.1
+            )
             .offset(offset)
             .limit(limit)
         ).all()

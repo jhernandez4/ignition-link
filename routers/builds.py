@@ -66,6 +66,33 @@ def get_all_builds(
 
     return builds_list
 
+@router.get("/all/query", response_model=list[BuildResponse])
+def get_all_builds(
+    username: str,
+    session: SessionDep,
+    offset: int = 0,
+    # Less than or equal to 100; default to 100
+    limit: Annotated[int, Query(le=15)] = 15,
+):
+    builds_list = session.exec(
+        select(Build)
+        .join(User)  
+        .where(
+            func.similarity(User.username, username) > 0.1
+        ) 
+        .order_by(func.similarity(User.username, username).desc())
+        .offset(offset)
+        .limit(limit)
+    ).all()
+
+    if builds_list is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to get builds. Builds list is none"
+        )
+
+    return builds_list
+
 @router.patch("/{build_id}", response_model=BuildResponse)
 def edit_build_info(
     build_id: int,

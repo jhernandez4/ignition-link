@@ -35,11 +35,12 @@ class CommentResponse(BaseModel):
         from_attributes = True
 
 class LikeResponse(BaseModel):
-    id: int
     post_id: int
     user_id: int
+    liked_at: datetime
 
     user: UserResponse
+    post: PostResponse
 
     class Config: from_attributes = True
 

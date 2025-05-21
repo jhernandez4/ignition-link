@@ -1,0 +1,71 @@
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import JSONResponse
+from typing import Annotated
+from sqlmodel import select, Session
+from pydantic import BaseModel
+from ..database import User, Comment
+from ..models import CommentResponse
+from ..dependencies import (
+    get_session, get_user_from_cookie, encode_model_to_json
+)
+
+router = APIRouter(
+    prefix="/comments",
+    tags=["comments"]
+)
+
+SessionDep = Annotated[Session, Depends(get_session)]
+CurrentUserDep = Annotated[User, Depends(get_user_from_cookie)]
+
+class CreateCommentRequest(BaseModel):
+    post_id: int
+    comment: str
+
+# Allow users to comment on posts
+@router.post("", response_model=CommentResponse)
+def create_comment_on_post(
+    request: CreateCommentRequest,
+    session: SessionDep,
+    current_user: CurrentUserDep
+):
+    new_comment = Comment(
+        post_id=request.post_id,
+        comment=request.comment,
+        user_id=current_user.id
+    )
+
+    session.add(new_comment)
+    session.commit()
+    session.refresh(new_comment)
+
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={
+            "message": "Comment added successfully",
+            "comment": encode_model_to_json(new_comment)
+        }
+    )
+
+# Show the comments on a post
+@router.get("", response_model=list[CommentResponse])
+def get_all_post_comments(
+    post_id: int,
+    session: SessionDep,
+    offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    all_comments = session.exec(
+        select(Comment)
+        .where(Comment.post_id == post_id)
+        .order_by(Comment.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    ).all()
+
+    if all_comments is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No comments"
+        )
+    
+    return all_comments

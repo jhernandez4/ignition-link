@@ -23,7 +23,7 @@ class User(SQLModel, table=True):
     email: EmailStr = Field(index=True, unique=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_admin: bool = Field(default=False)
-    bio: str = Field(default="TESTING DEFAULT BIO")
+    bio: str = Field(default="")
     profile_pic_url: str = Field(default="https://i.imgur.com/L5AoglL.png")
 
     posts: list["Post"] = Relationship(back_populates="user")
@@ -50,10 +50,9 @@ class Post(SQLModel, table=True):
     likes: list["Like"] = Relationship(back_populates="post")
 
 class Like(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    post_id: int = Field(foreign_key="post.id")
-    user_id: int = Field(foreign_key="user.id")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    post_id: int = Field(default=None, foreign_key="post.id", primary_key=True)
+    user_id: int = Field(default=None, foreign_key="user.id", primary_key=True)
+    liked_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     user: User = Relationship(back_populates="likes")
     post: Post = Relationship(back_populates="likes")
@@ -98,9 +97,7 @@ class Build(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id")
     vehicle_id: int = Field(foreign_key="vehicle.id")
     nickname: str | None = Field(default=None)
-    cover_picture_url: str | None = Field(
-        default="https://cdn2.iconfinder.com/data/icons/solidix-cars/128/cars_vehicle_motor_front-14-512.png"
-    )
+    cover_picture_url: str | None = Field(default="https://i.imgur.com/wfqeko6.png")
     description: str | None = Field(default=None)
     
     owner: User = Relationship(back_populates="builds")

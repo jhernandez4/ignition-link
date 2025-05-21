@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import select, Session
+from sqlmodel import select, Session, delete, func
 from typing import Annotated
 from sqlmodel import Session
 from pydantic import BaseModel
-from ..database import User, Build
+from ..database import User, Build, Post, Part
 from ..models import UserResponse, UserWithBuildsResponse
 from copy import deepcopy
+from firebase_admin import auth
 from ..dependencies import (
     get_session, check_username_exists, get_user_from_cookie
 )
@@ -80,6 +81,52 @@ def edit_user_me(
             detail="An error occurred while updating the profile"
         )
 
+@router.delete("/me")
+def delete_user_me(
+    current_user: CurrentUserDep,
+    session: SessionDep
+):
+    # Delete user from Firebase first 
+    auth.delete_user(current_user.firebase_uid)
+
+    # Delete Posts
+    session.exec(
+        delete(Post)
+        .where(Post.user_id == current_user.id)
+    )
+
+    user_builds = session.exec(
+        select(Build)
+        .where(Build.user_id == current_user.id)
+    ).all()
+
+    # Remove all parts from user's builds before deleting builds
+    for build in user_builds:
+        build.parts.clear()
+
+    # Delete Builds
+    session.exec(
+        delete(Build)
+        .where(Build.user_id == current_user.id)
+    )
+
+    # Delete Part submissions
+    session.exec(
+        delete(Part)
+        .where(Part.submitted_by_id == current_user.id)
+    )
+
+    # Delete user from database
+    session.delete(current_user)
+    session.commit()
+    
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": "Current user successfully deleted"
+        }
+    )
+
 @router.get("/query")
 def get_users_by_username(
     username: str,
@@ -91,7 +138,10 @@ def get_users_by_username(
     try:
         users = session.exec(
             select(User)
-            .where(User.username.ilike(f"%{username}%"))
+            .where(
+                # User.username.ilike(f"%{username}%")
+                func.similarity(User.username, username) > 0.1
+            )
             .offset(offset)
             .limit(limit)
         ).all()

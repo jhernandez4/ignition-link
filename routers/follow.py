@@ -1,13 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
-from typing import Annotated, List
+from typing import Annotated
 from sqlmodel import select, Session, func
-from sqlalchemy.orm import selectinload
-from pydantic import BaseModel
 from ..database import User, Follow
 from ..models import FollowResponse
 from ..dependencies import (
-    get_session, get_user_from_cookie, encode_model_to_json
+    get_session, get_user_from_cookie
 )
 
 router = APIRouter(
@@ -18,38 +16,32 @@ router = APIRouter(
 SessionDep = Annotated[Session, Depends(get_session)]
 CurrentUserDep = Annotated[User, Depends(get_user_from_cookie)]
 
-class CreateFollowRequest(BaseModel):
-    following_id: int
-
-    class Config:
-        from_attributes = True
-
-# Follow users
-@router.post("", response_model=FollowResponse)
+# Follow user
+@router.post("/{user_id}", response_model=FollowResponse)
 def follow_user(
-    request: CreateFollowRequest,
+    user_id: int,
     session: SessionDep,
     current_user: CurrentUserDep
 ):
-    if current_user.id == request.following_id:
+    if current_user.id == user_id:
         raise HTTPException(
             status_code=400, 
-            detail="You can't follow yourself"
+            detail="You cannot follow yourself."
         )
     
     already_following = session.exec(
-        select(Follow).where(Follow.follower_id == current_user.id, Follow.following_id == request.following_id)
+        select(Follow).where(Follow.follower_id == current_user.id, Follow.following_id == user_id)
     ).first()
 
     if already_following:
         raise HTTPException(
             status_code=409,
-            detail="You already follow this profile"
+            detail="You already follow this profile."
         )
     
     new_follow = Follow(
         follower_id=current_user.id,
-        following_id=request.following_id
+        following_id=user_id
     )
 
     session.add(new_follow)
@@ -59,27 +51,27 @@ def follow_user(
     return new_follow
 
 # Unfollow users
-@router.delete("")
+@router.delete("/{user_id}")
 def unfollow_user(
-    request: CreateFollowRequest,
+    user_id: int, 
     session: SessionDep,
     current_user: CurrentUserDep
 ):
-    if current_user.id == request.following_id:
+    if current_user.id == user_id:
         raise HTTPException(
             status_code=400,
-            detail="You can't unfollow yourself"
+            detail="You cannot unfollow yourself"
         )
     
     already_following = session.exec(
         select(Follow)
-        .where(Follow.follower_id == current_user.id, Follow.following_id == request.following_id)
+        .where(Follow.follower_id == current_user.id, Follow.following_id == user_id)
     ).first()
 
     if not already_following:
         raise HTTPException(
             status_code=400,
-            detail="You don't follow this user"
+            detail="You do not follow this user"
         )
 
     session.delete(already_following)
@@ -88,7 +80,7 @@ def unfollow_user(
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={
-            "message": "Unfollowed Profile"
+            "message": "Unfollowed profile"
         }
     )
 
@@ -98,11 +90,14 @@ def get_all_followers(
     user_id: int,
     session: SessionDep,
     offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100,
 ):
     all_followers = session.exec(
         select(Follow)
         .where(Follow.following_id == user_id)
         .offset(offset)
+        .limit(limit)
+        .order_by(Follow.followed_at.desc())
     ).all()
 
     if all_followers is None:

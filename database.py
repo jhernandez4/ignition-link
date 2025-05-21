@@ -80,12 +80,12 @@ class Vehicle(SQLModel, table=True):
     )
 
 class Follow(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    follower_id: int = Field(foreign_key="user.id")
-    following_id: int = Field(foreign_key="user.id")
+    follower_id: int = Field(foreign_key="user.id", primary_key=True)
+    following_id: int = Field(foreign_key="user.id", primary_key=True)
+    followed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    follower: Optional["User"] = Relationship(back_populates="following", sa_relationship_kwargs={"foreign_keys": "[Follow.follower_id]"})
-    following: Optional["User"] = Relationship(back_populates="followers", sa_relationship_kwargs={"foreign_keys": "[Follow.following_id]"})
+    follower: User = Relationship(back_populates="following", sa_relationship_kwargs={"foreign_keys": "[Follow.follower_id]"})
+    following: User = Relationship(back_populates="followers", sa_relationship_kwargs={"foreign_keys": "[Follow.following_id]"})
 
 # Create many-to-many relationship between Parts and Builds tables
 class BuildPartLink(SQLModel, table=True):

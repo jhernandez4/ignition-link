@@ -14,13 +14,9 @@ import os
 
 app = FastAPI()
 
-origins = [
-    "http://localhost",
-    "http://localhost:5173",
-    "https://ignitionlink-frontend.vercel.app",
-    "https://ignition-link-backup.netlify.app",
-    "https://ignitionlink.netlify.app"
-]
+origins_env = os.getenv("CORS_ORIGINS", "")
+origins = [origin.strip() for origin in origins_env.split(",") if origin.strip()]
+print(f"Configured CORS origins: {origins}")
 
 app.add_middleware(
     CORSMiddleware,

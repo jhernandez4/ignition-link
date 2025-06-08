@@ -63,6 +63,7 @@ PSQL_URI="postgresql://username:password@localhost/ignition_link"
 BRANDS_TXT_PATH="https://raw.githubusercontent.com/jhernandez4/vehicles_dataset/refs/heads/main/brands.txt"
 UNIQUE_VEHICLES_CSV_PATH="https://raw.githubusercontent.com/jhernandez4/vehicles_dataset/refs/heads/main/unique_vehicles.csv"
 GEMINI_API_KEY="MY_GEMINI_API_KEY"
+CORS_ORIGINS=http://localhost:5173
 ```
 Generate a Gemini API key here: https://ai.google.dev/gemini-api/docs/api-key
 

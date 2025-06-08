@@ -15,10 +15,7 @@ import os
 app = FastAPI()
 
 origins = [
-    "http://localhost",
     "http://localhost:5173",
-    "https://ignitionlink-frontend.vercel.app",
-    "https://ignition-link-backup.netlify.app",
     "https://ignitionlink.netlify.app"
 ]
 

@@ -5,7 +5,7 @@ from sqlmodel import select, Session, delete, func
 from typing import Annotated
 from sqlmodel import Session
 from pydantic import BaseModel
-from ..database import User, Build, Post, Part
+from ..database import User, Build, Post, Part, Like, Comment, Follow
 from ..models import UserResponse, UserWithBuildsResponse
 from copy import deepcopy
 from firebase_admin import auth
@@ -86,39 +86,89 @@ def delete_user_me(
     current_user: CurrentUserDep,
     session: SessionDep
 ):
-    # Delete user from Firebase first 
-    auth.delete_user(current_user.firebase_uid)
+    try:
+        # Delete Likes
+        session.exec(
+            delete(Like)
+            .where(Like.user_id == current_user.id)
+        )
 
-    # Delete Posts
-    session.exec(
-        delete(Post)
-        .where(Post.user_id == current_user.id)
-    )
+        # Delete Comments 
+        session.exec(
+            delete(Comment)
+            .where(Comment.user_id == current_user.id)
+        )
 
-    user_builds = session.exec(
-        select(Build)
-        .where(Build.user_id == current_user.id)
-    ).all()
+        # Delete Follows (both as follower and as being followed)
+        session.exec(
+            delete(Follow)
+            .where(Follow.follower_id == current_user.id)
+        )
+        session.exec(
+            delete(Follow)
+            .where(Follow.following_id == current_user.id)
+        )
 
-    # Remove all parts from user's builds before deleting builds
-    for build in user_builds:
-        build.parts.clear()
+        # Delete Posts
+        session.exec(
+            delete(Post)
+            .where(Post.user_id == current_user.id)
+        )
 
-    # Delete Builds
-    session.exec(
-        delete(Build)
-        .where(Build.user_id == current_user.id)
-    )
+        user_builds = session.exec(
+            select(Build)
+            .where(Build.user_id == current_user.id)
+        ).all()
 
-    # Delete Part submissions
-    session.exec(
-        delete(Part)
-        .where(Part.submitted_by_id == current_user.id)
-    )
+        # Remove all parts from user's builds before deleting builds
+        for build in user_builds:
+            build.parts.clear()
 
-    # Delete user from database
-    session.delete(current_user)
-    session.commit()
+        # Delete Builds
+        session.exec(
+            delete(Build)
+            .where(Build.user_id == current_user.id)
+        )
+
+        # Delete Part submissions
+        session.exec(
+            delete(Part)
+            .where(Part.submitted_by_id == current_user.id)
+        )
+
+        # Delete user from database
+        session.delete(current_user)
+        session.commit()
+
+    except AssertionError as assertion_error:
+        session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal assertion error while deleting user: {str(assertion_error)}"
+        )
+
+    except SQLAlchemyError as db_error:
+        session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error while deleting user: {str(db_error)}"
+        )
+
+    except Exception as error:
+        session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected error while deleting user: {str(error)}"
+        )
+    
+    try:
+        # Delete user from Firebase
+        auth.delete_user(current_user.firebase_uid)
+    except auth.AuthError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete user from Firebase: {str(e)}"
+        )
     
     return JSONResponse(
         status_code=status.HTTP_200_OK,

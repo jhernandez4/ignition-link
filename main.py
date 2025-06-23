@@ -58,7 +58,6 @@ def on_startup():
         raise RuntimeError("UNIQUE_VEHICLES_CSV_PATH is not set in the environment variables.")
 
     create_db_and_tables()
-    convert_csv_to_db(VEHICLES_CSV_PATH)
     insert_brands_to_db(BRANDS_TXT_PATH)
     populate_part_types()
     import_unique_vehicles_from_csv(UNIQUE_VEHICLES_CSV_PATH)

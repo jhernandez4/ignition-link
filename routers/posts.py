@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from fastapi.responses import JSONResponse
 from typing import Annotated
 from sqlmodel import select, Session
 from sqlalchemy.orm import selectinload
@@ -23,7 +22,7 @@ class CreatePostRequest(BaseModel):
     post_image_url: str
     caption: str | None = None
 
-@router.post("")
+@router.post("", response_model=PostResponse)
 def create_post(
     request: CreatePostRequest,
     current_user: CurrentUserDep,
@@ -45,13 +44,7 @@ def create_post(
     session.commit()
     session.refresh(new_post)
 
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content={
-            "message": "Post created successfully",
-            "post": encode_model_to_json(new_post) 
-        }
-    )
+    return new_post
 
 @router.get("", response_model=list[PostResponse])
 def get_posts_from_user_id(
@@ -103,7 +96,7 @@ def get_all_posts(
 class EditPostRequest(BaseModel):
     caption: str
 
-@router.put("/{post_id}")
+@router.put("/{post_id}", response_model=list[PostResponse])
 def edit_post(
     request: EditPostRequest,
     current_user: CurrentUserDep,
@@ -132,14 +125,6 @@ def edit_post(
     session.add(post_to_edit)
     session.commit()
     session.refresh(post_to_edit)
-
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={
-            "message": "Post edited successfully!",
-            "post": encode_model_to_json(post_to_edit)
-        }
-    )
 
 @router.get("/{post_id}", response_model=PostResponse)
 def get_post_by_id(post_id: int, session: SessionDep):

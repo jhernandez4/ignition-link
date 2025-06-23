@@ -31,6 +31,8 @@ class User(SQLModel, table=True):
     likes: list["Like"] = Relationship(back_populates="user")
     builds: list["Build"] = Relationship(back_populates="owner")
     part_submissions: list["Part"] = Relationship(back_populates="submitted_by")
+    following: list["Follow"] = Relationship(back_populates="follower", sa_relationship_kwargs={"foreign_keys": "[Follow.follower_id]"})
+    followers: list["Follow"] = Relationship(back_populates="following", sa_relationship_kwargs={"foreign_keys": "[Follow.following_id]"})
 
 class Post(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -76,6 +78,14 @@ class Vehicle(SQLModel, table=True):
     __table_args__ = (
         UniqueConstraint('year', 'make', 'model', name='uix_year_make_model'),
     )
+
+class Follow(SQLModel, table=True):
+    follower_id: int = Field(foreign_key="user.id", primary_key=True)
+    following_id: int = Field(foreign_key="user.id", primary_key=True)
+    followed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    follower: User = Relationship(back_populates="following", sa_relationship_kwargs={"foreign_keys": "[Follow.follower_id]"})
+    following: User = Relationship(back_populates="followers", sa_relationship_kwargs={"foreign_keys": "[Follow.following_id]"})
 
 # Create many-to-many relationship between Parts and Builds tables
 class BuildPartLink(SQLModel, table=True):

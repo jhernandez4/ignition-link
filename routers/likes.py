@@ -48,6 +48,33 @@ def add_like_to_post(
         }
     )
 
+@router.delete("/{post_id}")
+def unlike_post(
+    post_id: int,
+    session: SessionDep,
+    current_user: CurrentUserDep
+):
+    existing_like = session.exec(
+        select(Like)
+        .where(Like.post_id == post_id, Like.user_id == current_user.id)
+    ).first()
+
+    if not existing_like:
+        raise HTTPException(
+            status_code=400,
+            detail="Like does not exist."
+        )
+    
+    session.delete(existing_like)
+    session.commit()
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": "Unliked post"
+        }
+    )
+
 # Show all users who liked a post
 @router.get("/for-post/{post_id}", response_model=list[LikeResponse])
 def get_all_post_likes(

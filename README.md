@@ -40,21 +40,32 @@ https://www.postgresql.org/download/
 
 - Install and set it up.
 - Use the default postgresql user or create an "admin" user with all privileges
-- Set the password to 123 or something you can remember
-- Use the commands in the psql Shell:
+- Use the following commands in the psql Shell:
 
 ```sql
 CREATE DATABASE ignition_link;
 /connect ignition_link;
 ```
 
-- Replace the database URI in the .env to match the credentials and database name you set.
+- In the next step, adjust the database URI value in the .env file to match the credentials and database name you set in this step.
 
 ### 5. Move the following files into your directory
-- ignition-link-firebase-adminsdk.json
-- .env 
+- `ignition-link-firebase-adminsdk.json`
+- `.env`
+- `admin_emails.txt` *(optional)*
 
-These will **not** be checked into GitHub but they'll be posted in the discord server.
+Generate the admin SDK private key with Firebase: https://firebase.google.com/docs/admin/setup#python
+
+Ensure that the `.env` file has the following fields:
+```env
+FIREBASE_KEY_PATH="PATH_TO_FIREBASE_ADMIN_SDK_PRIVATE_KEY"
+PSQL_URI="postgresql://username:password@localhost/ignition_link"
+BRANDS_TXT_PATH="https://raw.githubusercontent.com/jhernandez4/vehicles_dataset/refs/heads/main/brands.txt"
+UNIQUE_VEHICLES_CSV_PATH="https://raw.githubusercontent.com/jhernandez4/vehicles_dataset/refs/heads/main/unique_vehicles.csv"
+GEMINI_API_KEY="MY_GEMINI_API_KEY"
+CORS_ORIGINS=http://localhost:5173
+```
+Generate a Gemini API key here: https://ai.google.dev/gemini-api/docs/api-key
 
 ### 6. Run the App
 

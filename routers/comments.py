@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from ..database import User, Comment, Post
 from ..models import CommentResponse
 from ..dependencies import (
-    get_session, get_user_from_cookie, encode_model_to_json
+    get_session, get_user_from_cookie, encode_model_to_json, check_resource_exists
 )
 
 router = APIRouter(
@@ -29,16 +29,7 @@ def create_comment_on_post(
     current_user: CurrentUserDep
 ):
     # Check if post exists before trying to comment on it
-    post = session.exec(
-        select(Post)
-        .where(Post.id == request.post_id)
-    ).first()
-
-    if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found."
-        )
+    check_resource_exists(session, Post, request.post_id, "Post")
 
     new_comment = Comment(
         post_id=request.post_id,
@@ -95,6 +86,9 @@ def get_all_post_comments(
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100,
 ):
+    # Check if post exists before trying to comment on it
+    check_resource_exists(session, Post, post_id, "Post")
+
     all_comments = session.exec(
         select(Comment)
         .where(Comment.post_id == post_id)

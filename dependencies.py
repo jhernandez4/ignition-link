@@ -5,7 +5,7 @@ from .database import User, engine
 from sqlmodel import select, Session
 from sqlalchemy.exc import SQLAlchemyError
 from firebase_admin import auth, exceptions
-from typing import Annotated
+from typing import Annotated, Type
 from pydantic import BaseModel
 from google import genai
 from dotenv import load_dotenv
@@ -147,3 +147,15 @@ def get_gemini_client():
     client = genai.Client(api_key=GEMINI_API_KEY)
 
     return client
+
+def check_resource_exists(session: Session, model: Type, resource_id: int, resource_name: str):
+    resource = session.exec(
+        select(model)
+        .where(model.id == resource_id)
+    ).first()
+
+    if not resource:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{resource_name} not found."
+        )

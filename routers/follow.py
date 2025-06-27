@@ -5,7 +5,7 @@ from sqlmodel import select, Session, func
 from ..database import User, Follow
 from ..models import FollowResponse
 from ..dependencies import (
-    get_session, get_user_from_cookie
+    get_session, get_user_from_cookie, check_resource_exists
 )
 
 router = APIRouter(
@@ -23,6 +23,9 @@ def follow_user(
     session: SessionDep,
     current_user: CurrentUserDep
 ):
+    # Check if user exists before trying follow
+    check_resource_exists(session, User, user_id, "User")
+
     if current_user.id == user_id:
         raise HTTPException(
             status_code=400, 
@@ -57,6 +60,9 @@ def unfollow_user(
     session: SessionDep,
     current_user: CurrentUserDep
 ):
+    # Check if user exists before trying to unfollow
+    check_resource_exists(session, User, user_id, "User")
+
     if current_user.id == user_id:
         raise HTTPException(
             status_code=400,
@@ -92,6 +98,9 @@ def get_all_followers(
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100,
 ):
+    # Check if user exists before trying to unfollow
+    check_resource_exists(session, User, user_id, "User")
+
     all_followers = session.exec(
         select(Follow)
         .where(Follow.following_id == user_id)
@@ -113,6 +122,9 @@ def get_follower_count(
     user_id: int,
     session: SessionDep
 ):
+    # Check if user exists before trying to unfollow
+    check_resource_exists(session, User, user_id, "User")
+
     followers = session.exec(
         select(Follow)
         .where(Follow.following_id == user_id)

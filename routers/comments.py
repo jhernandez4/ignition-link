@@ -86,7 +86,7 @@ def get_all_post_comments(
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100,
 ):
-    # Check if post exists before trying to comment on it
+    # Check if post exists before trying to get its list of comments 
     check_resource_exists(session, Post, post_id, "Post")
 
     all_comments = session.exec(

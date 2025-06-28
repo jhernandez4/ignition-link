@@ -57,7 +57,7 @@ def unlike_post(
     session: SessionDep,
     current_user: CurrentUserDep
 ):
-    # Check if post exists before trying to like it
+    # Check if post exists before trying to unlike 
     check_resource_exists(session, Post, post_id, "Post")
 
     existing_like = session.exec(
@@ -89,7 +89,7 @@ def get_all_post_likes(
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100,
 ):
-    # Check if post exists before trying to like it
+    # Check if post exists before getting list of likes 
     check_resource_exists(session, Post, post_id, "Post")
 
     all_likes = session.exec(
@@ -114,7 +114,7 @@ def get_like_count(
     post_id: int,
     session: SessionDep
 ):
-    # Check if post exists before trying to like it
+    # Check if post exists before getting like count on post 
     check_resource_exists(session, Post, post_id, "Post")
 
     like_count = session.exec(

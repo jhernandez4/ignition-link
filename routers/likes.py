@@ -3,10 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from typing import Annotated
 from sqlmodel import select, Session, func
-from ..database import User, Like
+from ..database import User, Like, Post
 from ..models import LikeResponse
 from ..dependencies import (
-    get_session, get_user_from_cookie, encode_model_to_json
+    get_session, get_user_from_cookie, encode_model_to_json, check_resource_exists
 )
 
 router = APIRouter(
@@ -24,6 +24,9 @@ def add_like_to_post(
     session: SessionDep,
     current_user: CurrentUserDep
 ):
+    # Check if post exists before trying to like it
+    check_resource_exists(session, Post, post_id, "Post")
+
     existing_like = session.exec(
         select(Like).where(Like.post_id == post_id, Like.user_id == current_user.id)
     ).first()
@@ -54,6 +57,9 @@ def unlike_post(
     session: SessionDep,
     current_user: CurrentUserDep
 ):
+    # Check if post exists before trying to unlike 
+    check_resource_exists(session, Post, post_id, "Post")
+
     existing_like = session.exec(
         select(Like)
         .where(Like.post_id == post_id, Like.user_id == current_user.id)
@@ -83,6 +89,9 @@ def get_all_post_likes(
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100,
 ):
+    # Check if post exists before getting list of likes 
+    check_resource_exists(session, Post, post_id, "Post")
+
     all_likes = session.exec(
         select(Like)
         .where(Like.post_id == post_id)
@@ -105,6 +114,9 @@ def get_like_count(
     post_id: int,
     session: SessionDep
 ):
+    # Check if post exists before getting like count on post 
+    check_resource_exists(session, Post, post_id, "Post")
+
     like_count = session.exec(
         select(func.count())
         .where(Like.post_id == post_id)

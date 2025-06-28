@@ -98,7 +98,7 @@ def get_all_followers(
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100,
 ):
-    # Check if user exists before trying to unfollow
+    # Check if user exists before getting list of followers 
     check_resource_exists(session, User, user_id, "User")
 
     all_followers = session.exec(
@@ -122,7 +122,7 @@ def get_follower_count(
     user_id: int,
     session: SessionDep
 ):
-    # Check if user exists before trying to unfollow
+    # Check if user exists before getting follow count 
     check_resource_exists(session, User, user_id, "User")
 
     followers = session.exec(
